@@ -7,11 +7,14 @@
 // TODO: 
 // - bessere Sprungberechnung mit Parabel (Gravity und Sprungzeit)
 // - Schauen wie lange ein Frame zum Zeichnen braucht und die delay entsprechend anpassen (Delta Time) -> Abziehen der Zeit zum Zeichnen/Logik
-// - mehrere verschiedene Kakteen als neue Bilder
+// - mehrere verschiedene Kakteen als neue Bilder, vielleicht auch mehere Kakteen auf einmal
+// - Grafik für Boden -> Pixel als Steine
 // - vielleicht auch noch zweite Taste zum Ducken hinzufügen, wenn Vogel kommt
 // - Titelbildschirm/GameOver Bildschirm
-// - wir haben Stand jetzt nur noch ~4K Flash Speicher!!
-// - Bilder müssen deshalb von SDCard geladen werden -> wie bekommt man das Blinken beim Zugriff auf SDCard weg??
+// - Landscape Orientation für das Display?
+// - HighScore auf SDCard speichern?
+// - wir haben Stand jetzt nur noch ~3.5K Flash Speicher!!
+// - -> Bilder müssen deshalb von SDCard geladen werden -> wie bekommt man das Blinken beim Zugriff auf SDCard weg??
 
 // Pinbelegung für das TFT-Display
 #define TFT_CS     10
