@@ -11,6 +11,7 @@
 // - Grafik für Boden -> Pixel als Steine
 // - vielleicht auch noch zweite Taste zum Ducken hinzufügen, wenn Vogel kommt
 // - Titelbildschirm/GameOver Bildschirm
+// - Sound über Beeper
 // - Landscape Orientation für das Display?
 // - HighScore auf SDCard speichern?
 // - wir haben Stand jetzt nur noch ~3.5K Flash Speicher!!
