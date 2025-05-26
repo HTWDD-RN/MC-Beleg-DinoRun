@@ -1,12 +1,13 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h>
 #include <SPI.h>
+#include <EEPROM.h>
 //#include <SdFat.h>
 
 // TODO: 
 // - bessere Sprungberechnung mit Parabel (Gravity und Sprungzeit)
 // - Schauen wie lange ein Frame zum Zeichnen braucht und die delay entsprechend anpassen (Delta Time) -> Abziehen der Zeit zum Zeichnen/Logik OK
-// - mehrere verschiedene Kakteen als neue Bilder, vielleicht auch mehrere Kakteen auf einmal / zusätzlich Vogel
+// - mehrere verschiedene Kakteen als neue Bilder, vielleicht auch mehrere Kakteen auf einmal / zusätzlich Vogel -> als Array?
 // - Geschwindigkeit langsam erhöhen bei Score Meilensteinen (alle 100)
 // - Grafik für Boden -> Pixel als Steine
 // - vielleicht auch noch zweite Taste zum Ducken hinzufügen, wenn Vogel kommt OK
@@ -14,7 +15,7 @@
 // - GameOver Bildschirm OK, aber vielleicht erst nach Tastendruck fortsetzen?
 // - Sound über Beeper
 // - Landscape Orientation für das Display? OK
-// - HighScore auf SDCard speichern?
+// - HighScore auf SDCard speichern? OK aber auf EEPROM, vielleicht später mal auf SDCard
 // - wir haben Stand jetzt nur noch ~3.5K Flash Speicher!! -> nutzen jetzt Flash OK
 // - -> Bilder müssen deshalb von SDCard geladen werden -> wie bekommt man das Blinken beim Zugriff auf SDCard weg??
 
@@ -192,6 +193,8 @@ int CactusDX = 4;
 
 int targetFrameDelay = 90; // Ziel Frametime in ms, wird reduziert durch Zeichenaufwand
 
+#define EEPROMHighscore 0 // Highscore permant in EEPROM speichern
+int highscore = 0;
 int score = 0;
 // Score ist auch Framecounter
 int lastScore = 0;
@@ -310,8 +313,15 @@ void setup() {
 
 void reset(){
   tft.fillScreen(ST7735_WHITE);
+
   tft.setCursor(55, 5);
-  tft.print("DINO RUN");
+  tft.print("HI:");
+  
+  #if EEPROMHighscore == 1
+  EEPROM.get(0, highscore);
+  #endif
+  tft.print(highscore);
+  
   score = 0;
   lastScore = 0;
   fps = 0;
@@ -491,6 +501,19 @@ void loop() {
       tft.print("GAME OVER");
       tft.setTextColor(ST7735_BLACK);
       tft.setTextSize(1);
+
+      #if EEPROMHighscore == 1
+      // neuer Highscore?
+      Serial.println(String("EEPROM val: ") + EEPROM.get(0, highscore));
+      EEPROM.get(0, highscore);
+      if (score > highscore){
+        EEPROM.put(0, score);
+      }
+      #else 
+      if (score > highscore){
+        highscore = score;
+      }
+      #endif
 
       delay(2000);
       reset();
