@@ -173,7 +173,7 @@ int DinoFrame = 0; // AnimationsFrame
 bool wasDucking = false;
 
 int CloudX = tft.width() + random(-100, 70); // random Offset
-#define CloudY 40
+#define CloudY 30
 #define CloudWidth 46
 #define CloudHeight 13
 
@@ -187,11 +187,13 @@ int CactusX = tft.width() + random(20, 100); // random Offset
 #define ScoreX 5
 #define ScoreY 5
 
+bool DarkMode = false;
+
 // Delta X (px pro Frame)
 int CloudDX = 2;
-int CactusDX = 4;  
+int CactusDX = 5;  
 
-int targetFrameDelay = 90; // Ziel Frametime in ms, wird reduziert durch Zeichenaufwand
+int targetFrameDelay = 65; // Ziel Frametime in ms, wird reduziert durch Zeichenaufwand
 
 #define EEPROMHighscore 0 // Highscore permant in EEPROM speichern
 int highscore = 0;
@@ -299,6 +301,7 @@ void setup() {
 
   // Initialisiere das TFT-Display
   tft.initR(INITR_BLACKTAB);
+  tft.invertDisplay(DarkMode); // "DarkMode"
   
   tft.setRotation(1);
   tft.fillScreen(ST7735_WHITE);
@@ -380,29 +383,39 @@ int drawFrame(){
     duck = false;
   }
 
-  // Löschen
-  tft.fillRect(CloudX, CloudY, CloudWidth, CloudHeight, ST7735_WHITE); // Wolke
-  tft.fillRect(CactusX, CactusY, CactusWidth, CactusHeight, ST7735_WHITE); // Kaktus
+
+  tft.fillRect(ScoreX, ScoreY, 30, 10, ST7735_WHITE); // Score löschen
+  score++;
+  tft.setCursor(ScoreX, ScoreY);
+  tft.print(score);
+  
+  tft.fillRect(CloudX, CloudY, CloudWidth, CloudHeight, ST7735_WHITE); // Wolke löschen
+  // Neue Wolkenposition
+  CloudX -= CloudDX;
+  if (CloudX <= -CloudWidth) {
+    CloudX = tft.width() + random(10,70);
+  }
+  tft.drawBitmap(CloudX, CloudY, epd_bitmap_cloud, CloudWidth, CloudHeight, tft.color565(150, 150, 150));
+
+
+  tft.fillRect(CactusX, CactusY, CactusWidth, CactusHeight, ST7735_WHITE); // Kaktus löschen
+  // Neue Kaktusposition
+  CactusX -= CactusDX;
+  if (CactusX <= -CactusWidth) {
+    CactusX = tft.width() + random(20,100);
+  }
+  tft.drawBitmap(CactusX, CactusY, epd_bitmap_cactus, CactusWidth, CactusHeight, tft.color565(50, 50, 50));
+  //tft.drawRect(CactusX, CactusY, CactusWidth, CactusHeight, ST77XX_RED); // Hitbox
+
+  tft.drawFastHLine(0, HLLineY, tft.width(), ST7735_BLACK); // horizontale Linie
+
+  // Dino Löschen
   if (duck == true){
     tft.fillRect(DinoX, DinoY, DinoDuckWidth, DinoDuckHeight, ST7735_WHITE); // Duck Dino
     jump = false;
   }
   else {
     tft.fillRect(DinoX, DinoY, DinoWidth, DinoHeight, ST7735_WHITE); // Normaler Dino
-  }
-
-  tft.fillRect(ScoreX, ScoreY, 30, 10, ST7735_WHITE); // Score
-
-  // Neue Wolkenposition
-  CloudX -= CloudDX;
-  if (CloudX <= -CloudWidth) {
-    CloudX = tft.width() + random(10,70);
-  }
-
-  // Neue Kaktusposition
-  CactusX -= CactusDX;
-  if (CactusX <= -CactusWidth) {
-    CactusX = tft.width() + random(20,100);
   }
 
   // Todo: Sprungpos. dynamisch berechnen
@@ -415,10 +428,6 @@ int drawFrame(){
       jumpProgress = 0;
     }
   }
-
-  score++;
-  tft.setCursor(ScoreX, ScoreY);
-  tft.print(score);
 
   // Kollision?
   if (duck == true){
@@ -434,34 +443,28 @@ int drawFrame(){
     }
   }
   
-  tft.drawFastHLine(0, HLLineY, tft.width(), ST7735_BLACK); // horizontale Linie
-  
-  tft.drawBitmap(CloudX, CloudY, epd_bitmap_cloud, CloudWidth, CloudHeight, tft.color565(150, 150, 150));
-  tft.drawBitmap(CactusX, CactusY, epd_bitmap_cactus, CactusWidth, CactusHeight, tft.color565(50, 50, 50));
-  //tft.drawRect(CactusX, CactusY, CactusWidth, CactusHeight, ST77XX_RED); // Hitbox
-
   // Dino animieren
   if (dead != 1){
     if (DinoFrame == 0){
       DinoFrame = 1;
       if (duck == true){
-        //tft.drawRect(DinoX + 4, DinoY + 4, DinoDuckWidth - 2 * 4, DinoDuckHeight - 2 * 4, ST77XX_BLUE); // Hitbox
         tft.drawBitmap(DinoX, DinoY, epd_bitmap_duck, DinoDuckWidth, DinoDuckHeight, tft.color565(50, 50, 50));
+        //tft.drawRect(DinoX + 4, DinoY + 4, DinoDuckWidth - 2 * 4, DinoDuckHeight - 2 * 4, ST77XX_BLUE); // Hitbox
       }
       else {
-        //tft.drawRect(DinoX + 4, DinoY + 4, DinoWidth - 2 * 4, DinoHeight - 2 * 4, ST77XX_BLUE); // Hitbox
         tft.drawBitmap(DinoX, DinoY, epd_bitmap_dino, DinoWidth, DinoHeight, tft.color565(50, 50, 50));
+        //tft.drawRect(DinoX + 4, DinoY + 4, DinoWidth - 2 * 4, DinoHeight - 2 * 4, ST77XX_BLUE); // Hitbox
       }
     }
     else if (DinoFrame == 1){
       DinoFrame = 0;
       if (duck == true){
-        //tft.drawRect(DinoX + 4, DinoY + 4, DinoDuckWidth - 2 * 4, DinoDuckHeight - 2 * 4, ST77XX_BLUE); // Hitbox
         tft.drawBitmap(DinoX, DinoY, epd_bitmap_duck2, DinoDuckWidth, DinoDuckHeight, tft.color565(50, 50, 50));
+        //tft.drawRect(DinoX + 4, DinoY + 4, DinoDuckWidth - 2 * 4, DinoDuckHeight - 2 * 4, ST77XX_BLUE); // Hitbox
       }
       else{
-        //tft.drawRect(DinoX + 4, DinoY + 4, DinoWidth - 2 * 4, DinoHeight - 2 * 4, ST77XX_BLUE); // Hitbox
         tft.drawBitmap(DinoX, DinoY, epd_bitmap_dino2, DinoWidth, DinoHeight, tft.color565(50, 50, 50));
+        //tft.drawRect(DinoX + 4, DinoY + 4, DinoWidth - 2 * 4, DinoHeight - 2 * 4, ST77XX_BLUE); // Hitbox
       }
     }
     return 0;
@@ -470,8 +473,11 @@ int drawFrame(){
     if (duck == true){
       DinoY -= DinoDuckYOffset;
     }
-    //tft.drawRect(DinoX + 4, DinoY + 4, DinoWidth - 2 * 4, DinoHeight - 2 * 4, ST77XX_BLUE);
+    tft.drawBitmap(CactusX, CactusY, epd_bitmap_cactus, CactusWidth, CactusHeight, tft.color565(50, 50, 50));
+    tft.drawRect(CactusX, CactusY, CactusWidth, CactusHeight, ST77XX_RED); // Hitbox
+    
     tft.drawBitmap(DinoX, DinoY, epd_bitmap_dead, DinoWidth, DinoHeight, ST77XX_RED);
+    tft.drawRect(DinoX + 4, DinoY + 4, DinoWidth - 2 * 4, DinoHeight - 2 * 4, ST77XX_BLUE);
     return 1;
   }
 }
@@ -495,9 +501,9 @@ void loop() {
     if (status == 1){ // tot -> GameOver
       tft.setTextSize(2);
       tft.setTextColor(ST7735_RED);
-      tft.fillRect(23, 47, 110, 20, ST7735_WHITE);
-      tft.drawRect(23, 47, 110, 20, ST7735_RED);
-      tft.setCursor(25, 50);
+      tft.fillRect(25, 47, 112, 20, ST7735_WHITE);
+      tft.drawRect(25, 47, 112, 20, ST7735_RED);
+      tft.setCursor(28, 50);
       tft.print("GAME OVER");
       tft.setTextColor(ST7735_BLACK);
       tft.setTextSize(1);
@@ -522,6 +528,7 @@ void loop() {
       // DeltaTime
       unsigned long frameEnd = millis();
       unsigned long frameTime = frameEnd - frameStart;
+
       //Serial.println(String("FrameTime: ") + round(frameTime));
       if (targetFrameDelay - (int)frameTime <= 0){ // FPS drop! -> mehr Zeit zum Zeichnen benötigt als TargetFrameTime
         delay(0);
@@ -529,6 +536,11 @@ void loop() {
       else{
         delay(targetFrameDelay - round(frameTime));
       }
+
+      tft.fillRect(tft.width() - 29, 17, 35, 10, ST7735_WHITE);
+      tft.setCursor(tft.width() - 29, 17);
+      tft.print(frameTime);
+      tft.print("ms");
     }
 }
 
