@@ -86,15 +86,17 @@ Sprite bird;
 
 bool DarkMode = true;
 
+int fps = 0;
+unsigned long framecount = 0;
+unsigned long lastFramecount = 0;
+unsigned long lastFPSUpdate = 0;
+
 int targetFrameTime = 1000 / 20;  // Ziel Frametime in ms, wird reduziert durch Zeichenaufwand
+bool animate = false; // Flag ob animiert und score aktualisiert wird, gesetzt jeden anderen Frame
 
 #define EEPROMHighscore 0  // Highscore permant in EEPROM speichern
 int highscore = 0;
 int score = 0;
-// Score ist auch Framecounter
-int lastScore = 0;
-int fps = 0;
-unsigned long lastFPSUpdate = 0;
 
 const int jumpHeights[] = {
   -13, -10, -7, -5, -4, -3, -2, -1,
@@ -203,8 +205,10 @@ void reset() {
   tft.print(highscore);
 
   score = 0;
-  lastScore = 0;
+
   fps = 0;
+  framecount = 0;
+  lastFramecount = 0;
   lastFPSUpdate = 0;
 
   jumpProgress = 0;
@@ -261,7 +265,6 @@ void checkDuck() {
 
 void drawScore() {
   tft.fillRect(ScoreX, ScoreY, 30, 10, ST7735_WHITE);  // Score löschen
-  score++;
   tft.setCursor(ScoreX, ScoreY);
   tft.print(score);
 }
@@ -291,9 +294,14 @@ void updateCloud() {
 
 int drawDino() {
   // Dino animieren
+  
   if (dead != 1) {
     if (dino.frame == 0) {
-      dino.frame = 1;
+      if (animate == true){ // nur neuen Frame setzen bei gewollter Animierung
+        dino.frame = 1;
+        animate = false;
+      }
+
       if (dino.ducking == true) {
         tft.drawBitmap(dino.x, dino.y, epd_bitmap_duck, dino.duckWidth, dino.duckHeight, tft.color565(50, 50, 50));
         //tft.drawRect(DinoX + 4, DinoY + 4, DinoDuckWidth - 2 * 4, DinoDuckHeight - 2 * 4, ST77XX_BLUE); // Hitbox
@@ -302,9 +310,13 @@ int drawDino() {
         tft.drawBitmap(dino.x, dino.y, epd_bitmap_dino, dino.width, dino.height, tft.color565(50, 50, 50));
         //tft.drawRect(DinoX + 4, DinoY + 4, DinoWidth - 2 * 4, DinoHeight - 2 * 4, ST77XX_BLUE); // Hitbox
       }
-    } 
-    else if (dino.frame == 1) {
-      dino.frame = 0;
+    }
+    else if (dino.frame == 1) { // nur neuen Frame setzen bei gewollter Animierung
+      if (animate == true){
+        dino.frame = 0;
+        animate = false;
+      }
+
       if (dino.ducking == true) {
         tft.drawBitmap(dino.x, dino.y, epd_bitmap_duck2, dino.duckWidth, dino.duckHeight, tft.color565(50, 50, 50));
         //tft.drawRect(DinoX + 4, DinoY + 4, DinoDuckWidth - 2 * 4, DinoDuckHeight - 2 * 4, ST77XX_BLUE); // Hitbox
@@ -388,8 +400,8 @@ int drawFrame() {
 void loop() {
   unsigned long now = millis();
   if (now - lastFPSUpdate >= 1000) {  // FPS jede Sek anzeigen
-    fps = score - lastScore;
-    lastScore = score;
+    fps = framecount - lastFramecount;
+    lastFramecount = framecount;
     lastFPSUpdate = now;
 
     tft.fillRect(tft.width() - 40, 5, 40, 10, ST7735_WHITE);
@@ -398,6 +410,7 @@ void loop() {
     Serial.println(String("FPS: ") + fps);
   }
 
+  framecount++;
   unsigned long frameStart = millis();
 
   int status = drawFrame();
@@ -427,10 +440,10 @@ void loop() {
     delay(2000);
     reset();
   } else if (status == 0) {  // geht weiter
-    // DeltaTime
     unsigned long frameEnd = millis();
     unsigned long frameTime = frameEnd - frameStart;
 
+    // DeltaTime
     if (targetFrameTime - (int)frameTime <= 0) {  // FPS drop! -> mehr Zeit zum Zeichnen benötigt als TargetFrameTime
       delay(0);
     } 
@@ -442,5 +455,11 @@ void loop() {
     tft.setCursor(tft.width() - 29, 17);
     tft.print(frameTime);
     tft.print("ms");
+
+    // animieren jeder anderen Frames
+    if (framecount % 2 == 0){
+      animate = true;
+      score++;
+    }
   }
 }
