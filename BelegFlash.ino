@@ -1,6 +1,6 @@
 //#include <Adafruit_GFX.h>
 //#include <Adafruit_ST7735.h>
-// New Lib: https://github.com/andrey-belokon/PDQ_GFX_Libs
+// https://github.com/andrey-belokon/PDQ_GFX_Libs
 #include <PDQ_GFX.h>
 #include "PDQ_ST7735_config.h"
 #include <PDQ_ST7735.h>
@@ -9,11 +9,11 @@
 #include <EEPROM.h>
 //#include <SdFat.h>
 
-// TODO: 
+// TODO:
 // - bessere Sprungberechnung mit Parabel (Gravity und Sprungzeit)
 // - Schauen wie lange ein Frame zum Zeichnen braucht und die delay entsprechend anpassen (Delta Time) -> Abziehen der Zeit zum Zeichnen/Logik OK
 // - mehrere verschiedene Kakteen als neue Bilder, vielleicht auch mehrere Kakteen auf einmal / zusätzlich Vogel -> als Array?
-// - Geschwindigkeit langsam erhöhen bei Score Meilensteinen (alle 100)
+// - Geschwindigkeit langsam erhöhen bei Score Meilensteinen (alle 100 oder mehr)
 // - Grafik für Boden -> Pixel als Steine
 // - vielleicht auch noch zweite Taste zum Ducken hinzufügen, wenn Vogel kommt OK
 // - Titelbildschirm
@@ -36,34 +36,48 @@ SDA: 11, SCK: 13 (für TFT/SD)
 SD MISO : 12
 SD MOSI: SDA (11)
 SD CLK: SCK (13)
-
 */
-    
+
 #define JMP_BUTTON_PIN 2
 #define DUCK_BUTTON_PIN 3
 
-PDQ_ST7735 tft; // Pins sind im Header
+PDQ_ST7735 tft;  // Pins sind im Header
 
-#define DinoX 5
-#define DinoYStart 90
-int DinoY = DinoYStart;
-#define DinoWidth 20
-#define DinoHeight 21
-#define DinoDuckWidth 28
-#define DinoDuckHeight 13
-int DinoFrame = 0; // AnimationsFrame
-#define DinoDuckYOffset 8; // Offset für geduckten Dino
+struct DinoSprite {
+  int x;
+  int y;
+  int yStart;
+  int width;
+  int height;
+  int duckWidth;
+  int duckHeight;
+  bool jumping;
+  bool ducking;
+  int frame;
+};
+
+DinoSprite dino;
 bool wasDucking = false;
+#define DinoDuckYOffset 8;  // Offset für geduckten Dino
 
-int CloudX = tft.width() + random(-100, 70); // random Offset
-#define CloudY 30
-#define CloudWidth 46
-#define CloudHeight 13
+enum SpriteType {
+  SPRITE_CACTUS,
+  SPRITE_CACTUS2,
+  SPRITE_BIRD,
+  SPRITE_CLOUD
+};
 
-int CactusX = tft.width() + random(20, 100); // random Offset
-#define CactusY 80
-#define CactusWidth 23
-#define CactusHeight 48
+struct Sprite {
+  SpriteType type;
+  int x, y;
+  int width, height;
+  int dx;
+};
+
+Sprite cloud;
+Sprite cactus;
+Sprite cactus2;
+Sprite bird;
 
 #define HLLineY 111
 
@@ -72,12 +86,9 @@ int CactusX = tft.width() + random(20, 100); // random Offset
 
 bool DarkMode = true;
 
-int targetFrameDelay = 50; // Ziel Frametime in ms, wird reduziert durch Zeichenaufwand
-// Delta X (px pro Frame)
-int CloudDX = 2;
-int CactusDX = 5;
+int targetFrameTime = 1000 / 20;  // Ziel Frametime in ms, wird reduziert durch Zeichenaufwand
 
-#define EEPROMHighscore 0 // Highscore permant in EEPROM speichern
+#define EEPROMHighscore 0  // Highscore permant in EEPROM speichern
 int highscore = 0;
 int score = 0;
 // Score ist auch Framecounter
@@ -87,91 +98,18 @@ unsigned long lastFPSUpdate = 0;
 
 const int jumpHeights[] = {
   -13, -10, -7, -5, -4, -3, -2, -1,
-   0,
-   1, 2, 3, 4, 5, 7, 10, 13
+  0,
+  1, 2, 3, 4, 5, 7, 10, 13
 };
-const int jumpLength = sizeof(jumpHeights) / sizeof(jumpHeights[0]); // Länge = ArrayLänge in Byte / Größe ArrayElement
-bool jump = false;
+const int jumpLength = sizeof(jumpHeights) / sizeof(jumpHeights[0]);  // Länge = ArrayLänge in Byte / Größe ArrayElement
 int jumpProgress = 0;
-
-bool duck = false;
 
 int dead = 0;
 
-/*
-//Sd2Card card;
-//SdVolume volume;
-//SdFile root;
-SdFat SD;
-File myFile;
-*/
-
-void jumpButtonFunc(){
-  jump = true;
+void jumpButtonFunc() {
+  dino.jumping = true;
+  //jump = true;
 }
-
-/*
-void initSD(){
-  Serial.print("Init SD card...");
-  tft.setCursor(40, 50);
-  tft.print("SD init...");
-
-  if (!SD.begin(SD_CS)){
-    Serial.println("FAIL!");
-    tft.print("FAIL!");
-    return;
-  }
-  Serial.println("OK!");
-  tft.print("OK!");
-
-
-  if (!card.init(SPI_HALF_SPEED, SD_CS)) {
-    Serial.println("FAIL!");
-    tft.print("FAIL!");
-    return;
-  }
-  Serial.println("OK!");
-  tft.print("OK!");
-
-  Serial.print("Card type: ");
-  switch (card.type()) {
-    case SD_CARD_TYPE_SD1:  Serial.println("SD1");  break;
-    case SD_CARD_TYPE_SD2:  Serial.println("SD2");  break;
-    case SD_CARD_TYPE_SDHC: Serial.println("SDHC"); break;
-    default:                Serial.println("Unknown");
-  }
-
-  
-  if (!volume.init(card)) {
-    Serial.println("Volume init fail");
-    tft.setCursor(40, 70);
-    tft.print("No FAT?");
-    return;
-  }
-
-   uint32_t volumeSize = volume.clusterCount() * volume.blocksPerCluster() / 2; // in KB
-  Serial.print("Volume size (MB): ");
-  Serial.println(volumeSize / 1024.0, 2);
-
-  tft.setCursor(40, 70);
-  tft.print("Size: ");
-  tft.print(volumeSize / 1024.0, 2);
-  tft.print("MB");
-  
-
-  myFile = SD.open("/test.txt", FILE_WRITE);
-  // if the file opened okay, write to it:
-  if (myFile) {
-    Serial.print("Writing to test.txt...");
-    myFile.println("testing 1, 2, 3.");
-    // close the file:
-    myFile.close();
-  }
-  else{
-    Serial.println(String("Return Code: ") + myFile);
-  }
-}
-*/
 
 void setup() {
   pinMode(JMP_BUTTON_PIN, INPUT_PULLUP);
@@ -180,20 +118,19 @@ void setup() {
 
   Serial.begin(115200);
 
-  #ifdef ST7735_RST_PIN	// Reset wie Adafruit
-	FastPin<ST7735_RST_PIN>::setOutput();
-	FastPin<ST7735_RST_PIN>::hi();
-	FastPin<ST7735_RST_PIN>::lo();
-	delay(1);
-	FastPin<ST7735_RST_PIN>::hi();
+  #ifdef ST7735_RST_PIN  // Reset wie Adafruit
+  FastPin<ST7735_RST_PIN>::setOutput();
+  FastPin<ST7735_RST_PIN>::hi();
+  FastPin<ST7735_RST_PIN>::lo();
+  delay(1);
+  FastPin<ST7735_RST_PIN>::hi();
   #endif
-
 
   // Initialisiere das TFT-Display
   //tft.initR(INITR_BLACKTAB);
   tft.begin();
-  tft.invertDisplay(DarkMode); // "DarkMode"
-  
+  tft.invertDisplay(DarkMode);  // "DarkMode"
+
   tft.setRotation(1);
   tft.fillScreen(ST7735_WHITE);
   tft.setTextColor(ST7735_BLACK);
@@ -205,37 +142,84 @@ void setup() {
   reset();
 }
 
-void reset(){
+void initDino() {
+  dino.x = 5;
+  dino.yStart = 90;
+  dino.y = dino.yStart;
+  dino.width = 20;
+  dino.height = 21;
+  dino.duckWidth = 28;
+  dino.duckHeight = 13;
+  dino.ducking = false;
+  dino.jumping = false;
+  dino.frame = 0;
+}
+
+void initCloud() {
+  cloud.type = SPRITE_BIRD;
+  cloud.x = tft.width() + random(-100, 70);
+  cloud.y = 30;
+  cloud.width = 46;
+  cloud.height = 13;
+  cloud.dx = 2;
+}
+
+void initCactus() {
+  cactus.type = SPRITE_CACTUS;
+  cactus.width = 23;
+  cactus.height = 48;
+  cactus.x = tft.width() + random(0, 60);
+  cactus.y = 80;
+  cactus.dx = 5;
+}
+
+void initCactus2() {
+  cactus2.type = SPRITE_CACTUS2;
+  cactus2.width = 23;
+  cactus2.height = 48;
+  cactus2.x = tft.width() + random(0, 60);
+  cactus2.y = 80;
+  cactus2.dx = 5;
+}
+
+void initBird() {
+  bird.type = SPRITE_BIRD;
+  bird.width = 42;
+  bird.height = 26;
+  bird.x = tft.width() + random(100, 200);
+  bird.y = random(60, 85);
+  bird.dx = 6;
+}
+
+void reset() {
   tft.fillScreen(ST7735_WHITE);
 
   tft.setCursor(55, 5);
   tft.print("HI:");
-  
+
   #if EEPROMHighscore == 1
   EEPROM.get(0, highscore);
   #endif
   tft.print(highscore);
-  
+
   score = 0;
   lastScore = 0;
   fps = 0;
   lastFPSUpdate = 0;
 
-  jump = false;
   jumpProgress = 0;
 
-  duck = false;
   wasDucking = false;
 
   dead = 0;
 
-  CloudX = tft.width() + random(-100, 70);
-  CactusX = tft.width() + random(20, 100);
-  DinoY = DinoYStart;
+  initDino();
+  initCactus();
+  initCloud();
 }
 
 // https://kishimotostudios.com/articles/aabb_collision/
-bool checkAABBCollision(int AX, int AY, int AWidth, int AHeight, int BX, int BY, int BWidth, int BHeight){
+bool checkAABBCollision(int AX, int AY, int AWidth, int AHeight, int BX, int BY, int BWidth, int BHeight) {
   int8_t padding = 4;
 
   int ALeft = AX + padding;
@@ -256,155 +240,154 @@ bool checkAABBCollision(int AX, int AY, int AWidth, int AHeight, int BX, int BY,
   return !(AisToTheRightOfB || AisToTheLeftOfB || AisAboveB || AisBelowB);
 }
 
-void checkDuck(){
+void checkDuck() {
   // Ducken -> Offset beim Umschalten setzen/entfernen
   bool isPressed = digitalRead(DUCK_BUTTON_PIN) == LOW;
-  if (isPressed == true && wasDucking == false && jump == false) { // ducken nicht erlaubt beim Springen
+  if (isPressed == true && wasDucking == false && dino.jumping == false) {  // ducken nicht erlaubt beim Springen
     // starten des ducken
-    tft.fillRect(DinoX, DinoY, DinoWidth, DinoHeight, ST7735_WHITE); // Normaler Dino
-    DinoY += DinoDuckYOffset;
+    tft.fillRect(dino.x, dino.y, dino.width, dino.height, ST7735_WHITE);  // Normaler Dino
+    dino.y += DinoDuckYOffset;
     wasDucking = true;
-    duck = true;
+    dino.ducking = true;
 
   } else if (isPressed == false && wasDucking == true) {
     // aufhören zu ducken
-    tft.fillRect(DinoX, DinoY, DinoDuckWidth, DinoDuckHeight, ST7735_WHITE); // Duck Dino
-    DinoY -= DinoDuckYOffset;
+    tft.fillRect(dino.x, dino.y, dino.duckWidth, dino.duckHeight, ST7735_WHITE);  // Duck Dino
+    dino.y -= DinoDuckYOffset;
     wasDucking = false;
-    duck = false;
+    dino.ducking = false;
   }
 }
 
-void drawScore(){
-  tft.fillRect(ScoreX, ScoreY, 30, 10, ST7735_WHITE); // Score löschen
+void drawScore() {
+  tft.fillRect(ScoreX, ScoreY, 30, 10, ST7735_WHITE);  // Score löschen
   score++;
   tft.setCursor(ScoreX, ScoreY);
   tft.print(score);
 }
 
-void drawCloud(){
-  tft.fillRect(CloudX, CloudY, CloudWidth, CloudHeight, ST7735_WHITE); // Wolke löschen
-  // Neue Wolkenposition
-  CloudX -= CloudDX;
-  if (CloudX <= -CloudWidth) {
-    CloudX = tft.width() + random(10,70);
-  }
-  tft.drawBitmap(CloudX, CloudY, epd_bitmap_cloud, CloudWidth, CloudHeight, tft.color565(150, 150, 150));
+void drawGround() {
+  tft.drawFastHLine(0, HLLineY, tft.width(), tft.color565(50, 50, 50));  // horizontale Linie
 }
 
-void drawCactus(){
-  tft.fillRect(CactusX, CactusY, CactusWidth, CactusHeight, ST7735_WHITE); // Kaktus löschen
+void updateCactus() {
+  tft.fillRect(cactus.x, cactus.y, cactus.width, cactus.height, ST7735_WHITE);  // Kaktus löschen
   // Neue Kaktusposition
-  CactusX -= CactusDX;
-  if (CactusX <= -CactusWidth) {
-    CactusX = tft.width() + random(20,100);
+  cactus.x -= cactus.dx;
+  if (cactus.x <= -cactus.width) {
+    cactus.x = tft.width() + random(20, 100);
   }
-  tft.drawBitmap(CactusX, CactusY, epd_bitmap_cactus, CactusWidth, CactusHeight, tft.color565(50, 50, 50));
+  tft.drawBitmap(cactus.x, cactus.y, epd_bitmap_cactus, cactus.width, cactus.height, tft.color565(50, 50, 50));
 }
 
-void drawGround(){
-  tft.drawFastHLine(0, HLLineY, tft.width(), tft.color565(50, 50, 50)); // horizontale Linie
+void updateCloud() {
+  tft.fillRect(cloud.x, cloud.y, cloud.width, cloud.height, ST7735_WHITE);
+  cloud.x -= cloud.dx;
+  if (cloud.x + cloud.width < 0) {
+    cloud.x = tft.width() + random(30, 70);
+  }
+  tft.drawBitmap(cloud.x, cloud.y, epd_bitmap_cloud, cloud.width, cloud.height, tft.color565(150, 150, 150));
 }
 
-int drawDino(){
+int drawDino() {
   // Dino animieren
-  if (dead != 1){
-    if (DinoFrame == 0){
-      DinoFrame = 1;
-      if (duck == true){
-        tft.drawBitmap(DinoX, DinoY, epd_bitmap_duck, DinoDuckWidth, DinoDuckHeight, tft.color565(50, 50, 50));
+  if (dead != 1) {
+    if (dino.frame == 0) {
+      dino.frame = 1;
+      if (dino.ducking == true) {
+        tft.drawBitmap(dino.x, dino.y, epd_bitmap_duck, dino.duckWidth, dino.duckHeight, tft.color565(50, 50, 50));
         //tft.drawRect(DinoX + 4, DinoY + 4, DinoDuckWidth - 2 * 4, DinoDuckHeight - 2 * 4, ST77XX_BLUE); // Hitbox
-      }
+      } 
       else {
-        tft.drawBitmap(DinoX, DinoY, epd_bitmap_dino, DinoWidth, DinoHeight, tft.color565(50, 50, 50));
+        tft.drawBitmap(dino.x, dino.y, epd_bitmap_dino, dino.width, dino.height, tft.color565(50, 50, 50));
         //tft.drawRect(DinoX + 4, DinoY + 4, DinoWidth - 2 * 4, DinoHeight - 2 * 4, ST77XX_BLUE); // Hitbox
       }
-    }
-    else if (DinoFrame == 1){
-      DinoFrame = 0;
-      if (duck == true){
-        tft.drawBitmap(DinoX, DinoY, epd_bitmap_duck2, DinoDuckWidth, DinoDuckHeight, tft.color565(50, 50, 50));
+    } 
+    else if (dino.frame == 1) {
+      dino.frame = 0;
+      if (dino.ducking == true) {
+        tft.drawBitmap(dino.x, dino.y, epd_bitmap_duck2, dino.duckWidth, dino.duckHeight, tft.color565(50, 50, 50));
         //tft.drawRect(DinoX + 4, DinoY + 4, DinoDuckWidth - 2 * 4, DinoDuckHeight - 2 * 4, ST77XX_BLUE); // Hitbox
-      }
-      else{
-        tft.drawBitmap(DinoX, DinoY, epd_bitmap_dino2, DinoWidth, DinoHeight, tft.color565(50, 50, 50));
+      } 
+      else {
+        tft.drawBitmap(dino.x, dino.y, epd_bitmap_dino2, dino.width, dino.height, tft.color565(50, 50, 50));
         //tft.drawRect(DinoX + 4, DinoY + 4, DinoWidth - 2 * 4, DinoHeight - 2 * 4, ST77XX_BLUE); // Hitbox
       }
     }
     return 0;
-  }
-  else { // tot
-    if (duck == true){
-      DinoY -= DinoDuckYOffset;
+  } 
+  else {  // tot
+    if (dino.ducking == true) {
+      dino.y -= DinoDuckYOffset;
     }
-    tft.drawBitmap(CactusX, CactusY, epd_bitmap_cactus, CactusWidth, CactusHeight, tft.color565(50, 50, 50));
-    tft.drawRect(CactusX, CactusY, CactusWidth, CactusHeight, ST7735_RED); // Hitbox
-    
-    tft.drawBitmap(DinoX, DinoY, epd_bitmap_dead, DinoWidth, DinoHeight, ST7735_RED);
-    tft.drawRect(DinoX + 4, DinoY + 4, DinoWidth - 2 * 4, DinoHeight - 2 * 4, ST7735_BLUE);
+    tft.drawBitmap(cactus.x, cactus.y, epd_bitmap_cactus, cactus.width, cactus.height, tft.color565(50, 50, 50));
+    tft.drawRect(cactus.x, cactus.y, cactus.width, cactus.height, ST7735_RED);  // Hitbox
+
+    tft.drawBitmap(dino.x, dino.y, epd_bitmap_dead, dino.width, dino.height, ST7735_RED);
+    tft.drawRect(dino.x + 4, dino.y + 4, dino.width - 2 * 4, dino.height - 2 * 4, ST7735_BLUE);
     return 1;
   }
 }
 
-void deleteDino(){
+void deleteDino() {
   // Dino Löschen
-  if (duck == true){
-    tft.fillRect(DinoX, DinoY, DinoDuckWidth, DinoDuckHeight, ST7735_WHITE); // Duck Dino
-    jump = false;
-  }
+  if (dino.ducking == true) {
+    tft.fillRect(dino.x, dino.y, dino.duckWidth, dino.duckHeight, ST7735_WHITE);  // Duck Dino
+    dino.jumping = false;
+  } 
   else {
-    tft.fillRect(DinoX, DinoY, DinoWidth, DinoHeight, ST7735_WHITE); // Normaler Dino
+    tft.fillRect(dino.x, dino.y, dino.width, dino.height, ST7735_WHITE);  // Normaler Dino
   }
 }
 
-void calcJump(){
+void calcJump() {
   // Todo: Sprungpos. dynamisch berechnen
-  if (jump == true && duck == false) {
-    DinoY += jumpHeights[jumpProgress];
+  if (dino.jumping == true && dino.ducking == false) {
+    dino.y += jumpHeights[jumpProgress];
     jumpProgress++;
 
     if (jumpProgress >= jumpLength) {
-      jump = false;
+      dino.jumping = false;
       jumpProgress = 0;
     }
   }
 }
 
-void checkDinoCollision(){
+void checkDinoCollision() {
   // Kollision?
-  if (duck == true){
-    if (checkAABBCollision(DinoX, DinoY, DinoDuckWidth, DinoDuckHeight, CactusX, CactusY, CactusWidth, CactusHeight)){
+  if (dino.ducking == true) {
+    if (checkAABBCollision(dino.x, dino.y, dino.duckWidth, dino.duckHeight, cactus.x, cactus.y, cactus.width, cactus.height)) {
       Serial.println("Collison?");
       dead = 1;
     }
-  }
-  else{
-    if (checkAABBCollision(DinoX, DinoY, DinoWidth, DinoHeight, CactusX, CactusY, CactusWidth, CactusHeight)){
+  } 
+  else {
+    if (checkAABBCollision(dino.x, dino.y, dino.width, dino.height, cactus.x, cactus.y, cactus.width, cactus.height)) {
       Serial.println("Collison?");
       dead = 1;
     }
   }
 }
 
-int drawFrame(){
+int drawFrame() {
   checkDuck();
 
   drawScore();
-  drawCloud();
-  drawCactus();
+  updateCloud();
+  updateCactus();
   drawGround();
-  
+
   deleteDino();
   calcJump();
   checkDinoCollision();
-  
+
   int status = drawDino();
   return status;
 }
 
 void loop() {
   unsigned long now = millis();
-  if (now - lastFPSUpdate >= 1000) { // FPS jede Sek anzeigen
+  if (now - lastFPSUpdate >= 1000) {  // FPS jede Sek anzeigen
     fps = score - lastScore;
     lastScore = score;
     lastFPSUpdate = now;
@@ -415,53 +398,49 @@ void loop() {
     Serial.println(String("FPS: ") + fps);
   }
 
-    unsigned long frameStart = millis();
-    
-    int status = drawFrame();
-    if (status == 1){ // tot -> GameOver
-      tft.setTextSize(2);
-      tft.setTextColor(ST7735_RED);
-      tft.fillRect(25, 47, 112, 20, ST7735_WHITE);
-      tft.drawRect(25, 47, 112, 20, ST7735_RED);
-      tft.setCursor(28, 50);
-      tft.print("GAME OVER");
-      tft.setTextColor(ST7735_BLACK);
-      tft.setTextSize(1);
+  unsigned long frameStart = millis();
 
-      #if EEPROMHighscore == 1
-      // neuer Highscore?
-      Serial.println(String("EEPROM val: ") + EEPROM.get(0, highscore));
-      EEPROM.get(0, highscore);
-      if (score > highscore){
-        EEPROM.put(0, score);
-      }
-      #else 
-      if (score > highscore){
-        highscore = score;
-      }
-      #endif
+  int status = drawFrame();
+  if (status == 1) {  // tot -> GameOver
+    tft.setTextSize(2);
+    tft.setTextColor(ST7735_RED);
+    tft.fillRect(25, 47, 112, 20, ST7735_WHITE);
+    tft.drawRect(25, 47, 112, 20, ST7735_RED);
+    tft.setCursor(28, 50);
+    tft.print("GAME OVER");
+    tft.setTextColor(ST7735_BLACK);
+    tft.setTextSize(1);
 
-      delay(2000);
-      reset();
+    #if EEPROMHighscore == 1
+    // neuer Highscore?
+    Serial.println(String("EEPROM val: ") + EEPROM.get(0, highscore));
+    EEPROM.get(0, highscore);
+    if (score > highscore) {
+      EEPROM.put(0, score);
     }
-    else if (status == 0){ // geht weiter
-      // DeltaTime
-      unsigned long frameEnd = millis();
-      unsigned long frameTime = frameEnd - frameStart;
-
-      //Serial.println(String("FrameTime: ") + round(frameTime));
-      if (targetFrameDelay - (int)frameTime <= 0){ // FPS drop! -> mehr Zeit zum Zeichnen benötigt als TargetFrameTime
-        delay(0);
-      }
-      else{
-        delay(targetFrameDelay - round(frameTime));
-      }
-
-      tft.fillRect(tft.width() - 29, 17, 35, 10, ST7735_WHITE);
-      tft.setCursor(tft.width() - 29, 17);
-      tft.print(frameTime);
-      tft.print("ms");
+    #else
+    if (score > highscore) {
+      highscore = score;
     }
+    #endif
+
+    delay(2000);
+    reset();
+  } else if (status == 0) {  // geht weiter
+    // DeltaTime
+    unsigned long frameEnd = millis();
+    unsigned long frameTime = frameEnd - frameStart;
+
+    if (targetFrameTime - (int)frameTime <= 0) {  // FPS drop! -> mehr Zeit zum Zeichnen benötigt als TargetFrameTime
+      delay(0);
+    } 
+    else {
+      delay(targetFrameTime - round(frameTime));
+    }
+
+    tft.fillRect(tft.width() - 29, 17, 35, 10, ST7735_WHITE);
+    tft.setCursor(tft.width() - 29, 17);
+    tft.print(frameTime);
+    tft.print("ms");
+  }
 }
-
-
