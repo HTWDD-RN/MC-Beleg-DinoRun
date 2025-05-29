@@ -12,7 +12,7 @@
 // TODO:
 // - bessere Sprungberechnung mit Parabel (Gravity und Sprungzeit)
 // - Schauen wie lange ein Frame zum Zeichnen braucht und die delay entsprechend anpassen (Delta Time) -> Abziehen der Zeit zum Zeichnen/Logik OK
-// - mehrere verschiedene Kakteen als neue Bilder, vielleicht auch mehrere Kakteen auf einmal / zusätzlich Vogel -> als Array?
+// - mehrere verschiedene Kakteen als neue Bilder, vielleicht auch mehrere Kakteen auf einmal / zusätzlich Vogel OK, aber möglicherweise mehrere Obstacles gleichzeitig auf Bildschirm
 // - Geschwindigkeit langsam erhöhen bei Score Meilensteinen (alle 100 oder mehr)
 // - Grafik für Boden -> Pixel als Steine
 // - vielleicht auch noch zweite Taste zum Ducken hinzufügen, wenn Vogel kommt OK
@@ -54,15 +54,18 @@ struct DinoSprite {
   bool jumping;
   bool ducking;
   int frame;
+  int padding;
 };
 
 DinoSprite dino;
 bool wasDucking = false;
 #define DinoDuckYOffset 8;  // Offset für geduckten Dino
+int8_t Dinopadding = 4;
 
 enum SpriteType {
   SPRITE_CACTUS,
   SPRITE_CACTUS2,
+  SPRITE_CACTUS3,
   SPRITE_BIRD,
   SPRITE_CLOUD
 };
@@ -72,12 +75,21 @@ struct Sprite {
   int x, y;
   int width, height;
   int dx;
+  int frame;
 };
+
+bool newObstacle = true; // Flag ob neues Obstacles random ausgewählt werden soll
+Sprite* obstacle; // hält Kopie des aktuellen Obstacles
 
 Sprite cloud;
 Sprite cactus;
 Sprite cactus2;
+Sprite cactus3;
 Sprite bird;
+
+// Array mit möglichen Obstacles
+Sprite* validObstacles[4] = {&cactus, &cactus2, &cactus3, &bird};
+const int validObstaclesLength = sizeof(validObstacles) / sizeof(validObstacles[0]);
 
 #define HLLineY 111
 
@@ -155,6 +167,7 @@ void initDino() {
   dino.ducking = false;
   dino.jumping = false;
   dino.frame = 0;
+  dino.padding = 4;
 }
 
 void initCloud() {
@@ -164,6 +177,7 @@ void initCloud() {
   cloud.width = 46;
   cloud.height = 13;
   cloud.dx = 2;
+  cloud.frame = 0;
 }
 
 void initCactus() {
@@ -173,24 +187,44 @@ void initCactus() {
   cactus.x = tft.width() + random(0, 60);
   cactus.y = 80;
   cactus.dx = 5;
+  cactus.frame = 0;
 }
 
 void initCactus2() {
   cactus2.type = SPRITE_CACTUS2;
-  cactus2.width = 23;
-  cactus2.height = 48;
+  cactus2.width = 27;
+  cactus2.height = 46;
   cactus2.x = tft.width() + random(0, 60);
-  cactus2.y = 80;
+  cactus2.y = 82;
   cactus2.dx = 5;
+  cactus2.frame = 0;
+}
+
+void initCactus3() {
+  cactus3.type = SPRITE_CACTUS3;
+  cactus3.width = 23;
+  cactus3.height = 48;
+  cactus3.x = tft.width() + random(0, 60);
+  cactus3.y = 80;
+  cactus3.dx = 5;
+  cactus3.frame = 0;
 }
 
 void initBird() {
   bird.type = SPRITE_BIRD;
   bird.width = 42;
-  bird.height = 26;
+  bird.height = 36;
   bird.x = tft.width() + random(100, 200);
-  bird.y = random(60, 85);
+  int randompos = random(0,2);
+  if (randompos == 0){
+    bird.y = 60;
+  }
+  else{
+    bird.y = 80;
+  }
+  
   bird.dx = 6;
+  bird.frame = 0;
 }
 
 void reset() {
@@ -215,21 +249,24 @@ void reset() {
 
   wasDucking = false;
 
+  newObstacle = true;
   dead = 0;
+  animate = true;
 
   initDino();
   initCactus();
+  initCactus2();
+  initCactus3();
+  initBird();
   initCloud();
 }
 
 // https://kishimotostudios.com/articles/aabb_collision/
 bool checkAABBCollision(int AX, int AY, int AWidth, int AHeight, int BX, int BY, int BWidth, int BHeight) {
-  int8_t padding = 4;
-
-  int ALeft = AX + padding;
-  int ARight = AX + AWidth - padding;
-  int ATop = AY + padding;
-  int ABottom = AY + AHeight - padding;
+  int ALeft = AX;
+  int ARight = AX + AWidth;
+  int ATop = AY;
+  int ABottom = AY + AHeight;
 
   int BLeft = BX;
   int BRight = BX + BWidth;
@@ -273,16 +310,6 @@ void drawGround() {
   tft.drawFastHLine(0, HLLineY, tft.width(), tft.color565(50, 50, 50));  // horizontale Linie
 }
 
-void updateCactus() {
-  tft.fillRect(cactus.x, cactus.y, cactus.width, cactus.height, ST7735_WHITE);  // Kaktus löschen
-  // Neue Kaktusposition
-  cactus.x -= cactus.dx;
-  if (cactus.x <= -cactus.width) {
-    cactus.x = tft.width() + random(20, 100);
-  }
-  tft.drawBitmap(cactus.x, cactus.y, epd_bitmap_cactus, cactus.width, cactus.height, tft.color565(50, 50, 50));
-}
-
 void updateCloud() {
   tft.fillRect(cloud.x, cloud.y, cloud.width, cloud.height, ST7735_WHITE);
   cloud.x -= cloud.dx;
@@ -290,6 +317,39 @@ void updateCloud() {
     cloud.x = tft.width() + random(30, 70);
   }
   tft.drawBitmap(cloud.x, cloud.y, epd_bitmap_cloud, cloud.width, cloud.height, tft.color565(150, 150, 150));
+}
+
+void updateSprite(Sprite &c) {
+  tft.fillRect(c.x, c.y, c.width, c.height, ST7735_WHITE); // löschen
+
+  // Neue Kaktusposition
+  c.x -= c.dx;
+  if (c.x <= -c.width) {
+    newObstacle = true;
+    c.x = tft.width() + random(20, 100);
+  }
+}
+
+void drawObstacle(){
+  switch (obstacle->type){
+    case SPRITE_CACTUS: tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_cactus, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
+    case SPRITE_CACTUS2: tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_cactus2, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
+    case SPRITE_CACTUS3: tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_cactus3, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
+    case SPRITE_BIRD: {
+      if (obstacle->frame == 0){
+        if (animate == true){
+          obstacle->frame = 1;
+        }
+        tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_bird, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
+      }
+      else if (obstacle->frame == 1){
+        if (animate == true){
+          obstacle->frame = 0;
+        }
+         tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_bird2, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
+      }
+    }
+  }
 }
 
 int drawDino() {
@@ -304,11 +364,9 @@ int drawDino() {
 
       if (dino.ducking == true) {
         tft.drawBitmap(dino.x, dino.y, epd_bitmap_duck, dino.duckWidth, dino.duckHeight, tft.color565(50, 50, 50));
-        //tft.drawRect(DinoX + 4, DinoY + 4, DinoDuckWidth - 2 * 4, DinoDuckHeight - 2 * 4, ST77XX_BLUE); // Hitbox
       } 
       else {
         tft.drawBitmap(dino.x, dino.y, epd_bitmap_dino, dino.width, dino.height, tft.color565(50, 50, 50));
-        //tft.drawRect(DinoX + 4, DinoY + 4, DinoWidth - 2 * 4, DinoHeight - 2 * 4, ST77XX_BLUE); // Hitbox
       }
     }
     else if (dino.frame == 1) { // nur neuen Frame setzen bei gewollter Animierung
@@ -316,14 +374,11 @@ int drawDino() {
         dino.frame = 0;
         animate = false;
       }
-
       if (dino.ducking == true) {
         tft.drawBitmap(dino.x, dino.y, epd_bitmap_duck2, dino.duckWidth, dino.duckHeight, tft.color565(50, 50, 50));
-        //tft.drawRect(DinoX + 4, DinoY + 4, DinoDuckWidth - 2 * 4, DinoDuckHeight - 2 * 4, ST77XX_BLUE); // Hitbox
       } 
       else {
         tft.drawBitmap(dino.x, dino.y, epd_bitmap_dino2, dino.width, dino.height, tft.color565(50, 50, 50));
-        //tft.drawRect(DinoX + 4, DinoY + 4, DinoWidth - 2 * 4, DinoHeight - 2 * 4, ST77XX_BLUE); // Hitbox
       }
     }
     return 0;
@@ -332,13 +387,18 @@ int drawDino() {
     if (dino.ducking == true) {
       dino.y -= DinoDuckYOffset;
     }
-    tft.drawBitmap(cactus.x, cactus.y, epd_bitmap_cactus, cactus.width, cactus.height, tft.color565(50, 50, 50));
-    tft.drawRect(cactus.x, cactus.y, cactus.width, cactus.height, ST7735_RED);  // Hitbox
+    drawObstacle();
+    drawHitboxes();
 
     tft.drawBitmap(dino.x, dino.y, epd_bitmap_dead, dino.width, dino.height, ST7735_RED);
-    tft.drawRect(dino.x + 4, dino.y + 4, dino.width - 2 * 4, dino.height - 2 * 4, ST7735_BLUE);
+    
     return 1;
   }
+}
+
+void drawHitboxes(){
+  tft.drawRect(obstacle->x, obstacle->y, obstacle->width, obstacle->height, ST7735_RED);  // Obstacle
+  tft.drawRect(dino.x + dino.padding, dino.y + dino.padding, dino.width - 2 * dino.padding, dino.height - 2 * dino.padding, ST7735_BLUE); // Dino
 }
 
 void deleteDino() {
@@ -368,13 +428,13 @@ void calcJump() {
 void checkDinoCollision() {
   // Kollision?
   if (dino.ducking == true) {
-    if (checkAABBCollision(dino.x, dino.y, dino.duckWidth, dino.duckHeight, cactus.x, cactus.y, cactus.width, cactus.height)) {
-      Serial.println("Collison?");
-      dead = 1;
-    }
-  } 
+      if (checkAABBCollision(dino.x + dino.padding, dino.y + dino.padding, dino.duckWidth - 2 * dino.padding, dino.duckHeight - 2 * dino.padding, obstacle->x, obstacle->y, obstacle->width, obstacle->height)) {
+        Serial.println("Collison?");
+        dead = 1;
+      }
+  }
   else {
-    if (checkAABBCollision(dino.x, dino.y, dino.width, dino.height, cactus.x, cactus.y, cactus.width, cactus.height)) {
+    if (checkAABBCollision(dino.x + dino.padding, dino.y + dino.padding, dino.width - 2 * dino.padding, dino.height - 2 * dino.padding, obstacle->x, obstacle->y, obstacle->width, obstacle->height)) {
       Serial.println("Collison?");
       dead = 1;
     }
@@ -386,7 +446,24 @@ int drawFrame() {
 
   drawScore();
   updateCloud();
-  updateCactus();
+
+  if (newObstacle == true){ // neues Obstacles setzen
+   randomSeed((int)millis());
+    int randomObs = random(0, validObstaclesLength);
+    obstacle = validObstacles[randomObs];
+
+    switch (obstacle->type){ // initialiseren des Objekts
+      case SPRITE_CACTUS: initCactus(); break;
+      case SPRITE_CACTUS2: initCactus2(); break;
+      case SPRITE_CACTUS3: initCactus3(); break;
+      case SPRITE_BIRD: initBird(); break;
+    }
+    newObstacle = false;
+  }
+  updateSprite(*obstacle);
+  drawObstacle();
+
+  //updateCactus3();
   drawGround();
 
   deleteDino();
