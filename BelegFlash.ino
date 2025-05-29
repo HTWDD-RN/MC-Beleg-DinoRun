@@ -66,6 +66,7 @@ enum SpriteType {
   SPRITE_CACTUS,
   SPRITE_CACTUS2,
   SPRITE_CACTUS3,
+  SPRITE_CACTUS4,
   SPRITE_BIRD,
   SPRITE_CLOUD
 };
@@ -79,16 +80,17 @@ struct Sprite {
 };
 
 bool newObstacle = true; // Flag ob neues Obstacles random ausgewählt werden soll
-Sprite* obstacle; // hält Kopie des aktuellen Obstacles
+Sprite* obstacle; // hält Zeiger auf aktuelles Obstacle
 
 Sprite cloud;
 Sprite cactus;
 Sprite cactus2;
 Sprite cactus3;
+Sprite cactus4;
 Sprite bird;
 
 // Array mit möglichen Obstacles
-Sprite* validObstacles[4] = {&cactus, &cactus2, &cactus3, &bird};
+Sprite* validObstacles[5] = {&cactus, &cactus2, &cactus3, &cactus4, &bird};
 const int validObstaclesLength = sizeof(validObstacles) / sizeof(validObstacles[0]);
 
 #define HLLineY 111
@@ -105,6 +107,8 @@ unsigned long lastFPSUpdate = 0;
 
 int targetFrameTime = 1000 / 20;  // Ziel Frametime in ms, wird reduziert durch Zeichenaufwand
 bool animate = false; // Flag ob animiert und score aktualisiert wird, gesetzt jeden anderen Frame
+
+double gameSpeed = 0.0;
 
 #define EEPROMHighscore 0  // Highscore permant in EEPROM speichern
 int highscore = 0;
@@ -210,11 +214,21 @@ void initCactus3() {
   cactus3.frame = 0;
 }
 
+void initCactus4() {
+  cactus4.type = SPRITE_CACTUS4;
+  cactus4.width = 15;
+  cactus4.height = 32;
+  cactus4.x = tft.width() + random(0, 60);
+  cactus4.y = 90;
+  cactus4.dx = 5;
+  cactus4.frame = 0;
+}
+
 void initBird() {
   bird.type = SPRITE_BIRD;
   bird.width = 42;
   bird.height = 36;
-  bird.x = tft.width() + random(100, 200);
+  bird.x = tft.width() + random(0, 60);
   int randompos = random(0,2);
   if (randompos == 0){
     bird.y = 60;
@@ -239,6 +253,7 @@ void reset() {
   tft.print(highscore);
 
   score = 0;
+  gameSpeed = 0.0;
 
   fps = 0;
   framecount = 0;
@@ -257,6 +272,7 @@ void reset() {
   initCactus();
   initCactus2();
   initCactus3();
+  initCactus4();
   initBird();
   initCloud();
 }
@@ -323,7 +339,7 @@ void updateSprite(Sprite &c) {
   tft.fillRect(c.x, c.y, c.width, c.height, ST7735_WHITE); // löschen
 
   // Neue Kaktusposition
-  c.x -= c.dx;
+  c.x -= c.dx + (int)gameSpeed;
   if (c.x <= -c.width) {
     newObstacle = true;
     c.x = tft.width() + random(20, 100);
@@ -335,6 +351,7 @@ void drawObstacle(){
     case SPRITE_CACTUS: tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_cactus, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
     case SPRITE_CACTUS2: tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_cactus2, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
     case SPRITE_CACTUS3: tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_cactus3, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
+    case SPRITE_CACTUS4: tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_cactus4, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
     case SPRITE_BIRD: {
       if (obstacle->frame == 0){
         if (animate == true){
@@ -448,7 +465,7 @@ int drawFrame() {
   updateCloud();
 
   if (newObstacle == true){ // neues Obstacles setzen
-   randomSeed((int)millis());
+    randomSeed((int)millis());
     int randomObs = random(0, validObstaclesLength);
     obstacle = validObstacles[randomObs];
 
@@ -486,7 +503,9 @@ void loop() {
     tft.print(String("FPS:") + fps);
     Serial.println(String("FPS: ") + fps);
   }
-
+  if (gameSpeed <= 5){
+    gameSpeed += 0.0025; // langsames erhöhen der Geschwindigkeit
+  }
   framecount++;
   unsigned long frameStart = millis();
 
