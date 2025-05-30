@@ -404,6 +404,10 @@ int drawDino() {
     if (dino.ducking == true) {
       dino.y -= DinoDuckYOffset;
     }
+
+    tft.fillRect(obstacle->x, obstacle->y, obstacle->width, obstacle->height, ST7735_WHITE); // löschen
+    drawGround();
+    drawObstacle();
     drawHitboxes();
 
     tft.drawBitmap(dino.x, dino.y, epd_bitmap_dead, dino.width, dino.height, ST7735_RED);
