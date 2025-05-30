@@ -404,7 +404,6 @@ int drawDino() {
     if (dino.ducking == true) {
       dino.y -= DinoDuckYOffset;
     }
-    drawObstacle();
     drawHitboxes();
 
     tft.drawBitmap(dino.x, dino.y, epd_bitmap_dead, dino.width, dino.height, ST7735_RED);
