@@ -473,6 +473,7 @@ int drawFrame() {
       case SPRITE_CACTUS: initCactus(); break;
       case SPRITE_CACTUS2: initCactus2(); break;
       case SPRITE_CACTUS3: initCactus3(); break;
+      case SPRITE_CACTUS4: initCactus4(); break;
       case SPRITE_BIRD: initBird(); break;
     }
     newObstacle = false;
