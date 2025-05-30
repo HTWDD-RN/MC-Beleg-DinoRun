@@ -40,6 +40,7 @@ SD CLK: SCK (13)
 
 #define JMP_BUTTON_PIN 2
 #define DUCK_BUTTON_PIN 3
+#define BUZZER_PIN 5
 
 PDQ_ST7735 tft;  // Pins sind im Header
 
@@ -123,6 +124,10 @@ const int jumpLength = sizeof(jumpHeights) / sizeof(jumpHeights[0]);  // Länge 
 int jumpProgress = 0;
 
 int dead = 0;
+
+int loss_melody[] = {330, 311, 294, 277, 262, 247};
+int loss_melody_durations[] = {125, 125, 125, 125, 1000, 500};
+int loss_melody_length = sizeof(loss_melody)/sizeof(loss_melody[0]);
 
 void jumpButtonFunc() {
   dino.jumping = true;
@@ -495,6 +500,14 @@ int drawFrame() {
   return status;
 }
 
+void playMelody(int melody[], int durations[], int melody_length) {
+  for (int i = 0; i < melody_length; i++) {
+    tone(BUZZER_PIN, melody[i]);
+    delay(durations[i]);
+  }
+  noTone(BUZZER_PIN);
+}
+
 void loop() {
   unsigned long now = millis();
   if (now - lastFPSUpdate >= 1000) {  // FPS jede Sek anzeigen
@@ -523,6 +536,7 @@ void loop() {
     tft.print("GAME OVER");
     tft.setTextColor(ST7735_BLACK);
     tft.setTextSize(1);
+    playMelody(loss_melody, loss_melody_durations, loss_melody_length);
 
     #if EEPROMHighscore == 1
     // neuer Highscore?
