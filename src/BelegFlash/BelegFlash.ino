@@ -80,8 +80,8 @@ struct Sprite {
   int frame;
 };
 
-bool newObstacle = true; // Flag ob neues Obstacles random ausgewählt werden soll
-Sprite* obstacle; // hält Zeiger auf aktuelles Obstacle
+bool newObstacle = true;  // Flag ob neues Obstacles random ausgewählt werden soll
+Sprite* obstacle;         // hält Zeiger auf aktuelles Obstacle
 
 Sprite cloud;
 Sprite cactus;
@@ -91,7 +91,7 @@ Sprite cactus4;
 Sprite bird;
 
 // Array mit möglichen Obstacles
-Sprite* validObstacles[5] = {&cactus, &cactus2, &cactus3, &cactus4, &bird};
+Sprite* validObstacles[5] = { &cactus, &cactus2, &cactus3, &cactus4, &bird };
 const int validObstaclesLength = sizeof(validObstacles) / sizeof(validObstacles[0]);
 
 #define HLLineY 111
@@ -107,7 +107,7 @@ unsigned long lastFramecount = 0;
 unsigned long lastFPSUpdate = 0;
 
 int targetFrameTime = 1000 / 20;  // Ziel Frametime in ms, wird reduziert durch Zeichenaufwand
-bool animate = false; // Flag ob animiert und score aktualisiert wird, gesetzt jeden anderen Frame
+bool animate = false;             // Flag ob animiert und score aktualisiert wird, gesetzt jeden anderen Frame
 
 double gameSpeed = 0.0;
 
@@ -125,9 +125,22 @@ int jumpProgress = 0;
 
 int dead = 0;
 
-int loss_melody[] = {330, 311, 294, 277, 262, 247};
-int loss_melody_durations[] = {125, 125, 125, 125, 1000, 500};
-int loss_melody_length = sizeof(loss_melody)/sizeof(loss_melody[0]);
+// defines different melodies
+int loss_melody[] = { 330, 311, 294, 277, 262, 247 };
+int loss_melody_durations[] = { 125, 125, 125, 125, 1000, 500 };
+int loss_melody_length = sizeof(loss_melody) / sizeof(loss_melody[0]);
+
+int milestone_melody[] = { 349, 370, 392, 415 };
+int milestone_melody_durations[] = { 125, 125, 125, 250 };
+int milestone_melody_length = sizeof(milestone_melody) / sizeof(milestone_melody[0]);
+
+// intializes the melody function
+int* current_melody;
+int* current_melody_durations;
+int current_melody_length = 0;
+int current_note_index = 0;
+unsigned long prev_time_in_millis = 0;
+bool melody_is_playing_flag = false;
 
 void jumpButtonFunc() {
   dino.jumping = true;
@@ -141,13 +154,13 @@ void setup() {
 
   Serial.begin(115200);
 
-  #ifdef ST7735_RST_PIN  // Reset wie Adafruit
+#ifdef ST7735_RST_PIN  // Reset wie Adafruit
   FastPin<ST7735_RST_PIN>::setOutput();
   FastPin<ST7735_RST_PIN>::hi();
   FastPin<ST7735_RST_PIN>::lo();
   delay(1);
   FastPin<ST7735_RST_PIN>::hi();
-  #endif
+#endif
 
   // Initialisiere das TFT-Display
   //tft.initR(INITR_BLACKTAB);
@@ -234,14 +247,13 @@ void initBird() {
   bird.width = 42;
   bird.height = 36;
   bird.x = tft.width() + random(0, 60);
-  int randompos = random(0,2);
-  if (randompos == 0){
+  int randompos = random(0, 2);
+  if (randompos == 0) {
     bird.y = 60;
-  }
-  else{
+  } else {
     bird.y = 80;
   }
-  
+
   bird.dx = 6;
   bird.frame = 0;
 }
@@ -252,9 +264,9 @@ void reset() {
   tft.setCursor(55, 5);
   tft.print("HI:");
 
-  #if EEPROMHighscore == 1
+#if EEPROMHighscore == 1
   EEPROM.get(0, highscore);
-  #endif
+#endif
   tft.print(highscore);
 
   score = 0;
@@ -340,8 +352,8 @@ void updateCloud() {
   tft.drawBitmap(cloud.x, cloud.y, epd_bitmap_cloud, cloud.width, cloud.height, tft.color565(150, 150, 150));
 }
 
-void updateSprite(Sprite &c) {
-  tft.fillRect(c.x, c.y, c.width, c.height, ST7735_WHITE); // löschen
+void updateSprite(Sprite& c) {
+  tft.fillRect(c.x, c.y, c.width, c.height, ST7735_WHITE);  // löschen
 
   // Neue Kaktusposition
   c.x -= c.dx + (int)gameSpeed;
@@ -351,79 +363,77 @@ void updateSprite(Sprite &c) {
   }
 }
 
-void drawObstacle(){
-  switch (obstacle->type){
+void drawObstacle() {
+  switch (obstacle->type) {
     case SPRITE_CACTUS: tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_cactus, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
     case SPRITE_CACTUS2: tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_cactus2, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
     case SPRITE_CACTUS3: tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_cactus3, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
     case SPRITE_CACTUS4: tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_cactus4, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
-    case SPRITE_BIRD: {
-      if (obstacle->frame == 0){
-        if (animate == true){
-          obstacle->frame = 1;
+    case SPRITE_BIRD:
+      {
+        if (obstacle->frame == 0) {
+          if (animate == true) {
+            obstacle->frame = 1;
+          }
+          tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_bird, obstacle->width, obstacle->height, tft.color565(50, 50, 50));
+          break;
+        } else if (obstacle->frame == 1) {
+          if (animate == true) {
+            obstacle->frame = 0;
+          }
+          tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_bird2, obstacle->width, obstacle->height, tft.color565(50, 50, 50));
+          break;
         }
-        tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_bird, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
       }
-      else if (obstacle->frame == 1){
-        if (animate == true){
-          obstacle->frame = 0;
-        }
-         tft.drawBitmap(obstacle->x, obstacle->y, epd_bitmap_bird2, obstacle->width, obstacle->height, tft.color565(50, 50, 50)); break;
-      }
-    }
   }
 }
 
 int drawDino() {
   // Dino animieren
-  
+
   if (dead != 1) {
     if (dino.frame == 0) {
-      if (animate == true){ // nur neuen Frame setzen bei gewollter Animierung
+      if (animate == true) {  // nur neuen Frame setzen bei gewollter Animierung
         dino.frame = 1;
         animate = false;
       }
 
       if (dino.ducking == true) {
         tft.drawBitmap(dino.x, dino.y, epd_bitmap_duck, dino.duckWidth, dino.duckHeight, tft.color565(50, 50, 50));
-      } 
-      else {
+      } else {
         tft.drawBitmap(dino.x, dino.y, epd_bitmap_dino, dino.width, dino.height, tft.color565(50, 50, 50));
       }
-    }
-    else if (dino.frame == 1) { // nur neuen Frame setzen bei gewollter Animierung
-      if (animate == true){
+    } else if (dino.frame == 1) {  // nur neuen Frame setzen bei gewollter Animierung
+      if (animate == true) {
         dino.frame = 0;
         animate = false;
       }
       if (dino.ducking == true) {
         tft.drawBitmap(dino.x, dino.y, epd_bitmap_duck2, dino.duckWidth, dino.duckHeight, tft.color565(50, 50, 50));
-      } 
-      else {
+      } else {
         tft.drawBitmap(dino.x, dino.y, epd_bitmap_dino2, dino.width, dino.height, tft.color565(50, 50, 50));
       }
     }
     return 0;
-  } 
-  else {  // tot
+  } else {  // tot
     if (dino.ducking == true) {
       dino.y -= DinoDuckYOffset;
     }
 
-    tft.fillRect(obstacle->x, obstacle->y, obstacle->width, obstacle->height, ST7735_WHITE); // löschen
+    tft.fillRect(obstacle->x, obstacle->y, obstacle->width, obstacle->height, ST7735_WHITE);  // löschen
     drawGround();
     drawObstacle();
     drawHitboxes();
 
     tft.drawBitmap(dino.x, dino.y, epd_bitmap_dead, dino.width, dino.height, ST7735_RED);
-    
+
     return 1;
   }
 }
 
-void drawHitboxes(){
-  tft.drawRect(obstacle->x, obstacle->y, obstacle->width, obstacle->height, ST7735_RED);  // Obstacle
-  tft.drawRect(dino.x + dino.padding, dino.y + dino.padding, dino.width - 2 * dino.padding, dino.height - 2 * dino.padding, ST7735_BLUE); // Dino
+void drawHitboxes() {
+  tft.drawRect(obstacle->x, obstacle->y, obstacle->width, obstacle->height, ST7735_RED);                                                   // Obstacle
+  tft.drawRect(dino.x + dino.padding, dino.y + dino.padding, dino.width - 2 * dino.padding, dino.height - 2 * dino.padding, ST7735_BLUE);  // Dino
 }
 
 void deleteDino() {
@@ -431,8 +441,7 @@ void deleteDino() {
   if (dino.ducking == true) {
     tft.fillRect(dino.x, dino.y, dino.duckWidth, dino.duckHeight, ST7735_WHITE);  // Duck Dino
     dino.jumping = false;
-  } 
-  else {
+  } else {
     tft.fillRect(dino.x, dino.y, dino.width, dino.height, ST7735_WHITE);  // Normaler Dino
   }
 }
@@ -453,12 +462,11 @@ void calcJump() {
 void checkDinoCollision() {
   // Kollision?
   if (dino.ducking == true) {
-      if (checkAABBCollision(dino.x + dino.padding, dino.y + dino.padding, dino.duckWidth - 2 * dino.padding, dino.duckHeight - 2 * dino.padding, obstacle->x, obstacle->y, obstacle->width, obstacle->height)) {
-        Serial.println("Collison?");
-        dead = 1;
-      }
-  }
-  else {
+    if (checkAABBCollision(dino.x + dino.padding, dino.y + dino.padding, dino.duckWidth - 2 * dino.padding, dino.duckHeight - 2 * dino.padding, obstacle->x, obstacle->y, obstacle->width, obstacle->height)) {
+      Serial.println("Collison?");
+      dead = 1;
+    }
+  } else {
     if (checkAABBCollision(dino.x + dino.padding, dino.y + dino.padding, dino.width - 2 * dino.padding, dino.height - 2 * dino.padding, obstacle->x, obstacle->y, obstacle->width, obstacle->height)) {
       Serial.println("Collison?");
       dead = 1;
@@ -472,12 +480,12 @@ int drawFrame() {
   drawScore();
   updateCloud();
 
-  if (newObstacle == true){ // neues Obstacles setzen
+  if (newObstacle == true) {  // neues Obstacles setzen
     randomSeed((int)millis());
     int randomObs = random(0, validObstaclesLength);
     obstacle = validObstacles[randomObs];
 
-    switch (obstacle->type){ // initialiseren des Objekts
+    switch (obstacle->type) {  // initialiseren des Objekts
       case SPRITE_CACTUS: initCactus(); break;
       case SPRITE_CACTUS2: initCactus2(); break;
       case SPRITE_CACTUS3: initCactus3(); break;
@@ -501,15 +509,37 @@ int drawFrame() {
 }
 
 void playMelody(int melody[], int durations[], int melody_length) {
-  for (int i = 0; i < melody_length; i++) {
-    tone(BUZZER_PIN, melody[i]);
-    delay(durations[i]);
+  if (!melody_is_playing_flag){
+    current_melody = melody;
+    current_melody_durations = durations;
+    current_melody_length = melody_length;
+    current_note_index = 0;
+    melody_is_playing_flag = true;
+    prev_time_in_millis = millis();
+    tone(BUZZER_PIN, current_melody[current_note_index], current_melody_durations[current_note_index]);
+  } else {
+    if (millis() - prev_time_in_millis >= current_melody_durations[current_note_index]) {
+      if (current_melody_length-1 != current_note_index) {
+        current_note_index += 1;
+        tone(BUZZER_PIN, current_melody[current_note_index], current_melody_durations[current_note_index]);
+      } else {
+        melody_is_playing_flag = false;
+        noTone(BUZZER_PIN);
+      }
+      prev_time_in_millis = millis();
+    }
   }
-  noTone(BUZZER_PIN);
+}
+
+void updateMelody() {
+  if (melody_is_playing_flag) {
+    playMelody(current_melody, current_melody_durations, current_melody_length);
+  }
 }
 
 void loop() {
   unsigned long now = millis();
+  updateMelody();
   if (now - lastFPSUpdate >= 1000) {  // FPS jede Sek anzeigen
     fps = framecount - lastFramecount;
     lastFramecount = framecount;
@@ -520,11 +550,15 @@ void loop() {
     tft.print(String("FPS:") + fps);
     Serial.println(String("FPS: ") + fps);
   }
-  if (gameSpeed <= 5){
-    gameSpeed += 0.0025; // langsames erhöhen der Geschwindigkeit
+  if (gameSpeed <= 5) {
+    gameSpeed += 0.0025;  // langsames erhöhen der Geschwindigkeit
   }
   framecount++;
   unsigned long frameStart = millis();
+
+if (score%100 == 0 && score !=0) {
+    playMelody(milestone_melody, milestone_melody_durations, milestone_melody_length);
+  }
 
   int status = drawFrame();
   if (status == 1) {  // tot -> GameOver
@@ -538,18 +572,18 @@ void loop() {
     tft.setTextSize(1);
     playMelody(loss_melody, loss_melody_durations, loss_melody_length);
 
-    #if EEPROMHighscore == 1
+#if EEPROMHighscore == 1
     // neuer Highscore?
     Serial.println(String("EEPROM val: ") + EEPROM.get(0, highscore));
     EEPROM.get(0, highscore);
     if (score > highscore) {
       EEPROM.put(0, score);
     }
-    #else
+#else
     if (score > highscore) {
       highscore = score;
     }
-    #endif
+#endif
 
     delay(2000);
     reset();
@@ -560,8 +594,7 @@ void loop() {
     // DeltaTime
     if (targetFrameTime - (int)frameTime <= 0) {  // FPS drop! -> mehr Zeit zum Zeichnen benötigt als TargetFrameTime
       delay(0);
-    } 
-    else {
+    } else {
       delay(targetFrameTime - round(frameTime));
     }
 
@@ -569,9 +602,8 @@ void loop() {
     tft.setCursor(tft.width() - 29, 17);
     tft.print(frameTime);
     tft.print("ms");
-
     // animieren jeder anderen Frames
-    if (framecount % 2 == 0){
+    if (framecount % 2 == 0) {
       animate = true;
       score++;
     }
