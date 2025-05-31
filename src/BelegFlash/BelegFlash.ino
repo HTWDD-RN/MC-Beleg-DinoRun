@@ -592,7 +592,7 @@ if (game_start_flag) {
     Serial.println(String("FPS: ") + fps);
   }
   if (gameSpeed <= 5 && score%MILESTONE == 0 && score !=0) {
-    gameSpeed += 0.8;  
+    gameSpeed += 0.5;  
     playMelody(milestone_melody, milestone_melody_durations, milestone_melody_length);
   }
   framecount++;
