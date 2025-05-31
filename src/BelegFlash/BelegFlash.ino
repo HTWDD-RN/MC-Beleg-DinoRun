@@ -111,6 +111,8 @@ bool animate = false;             // Flag ob animiert und score aktualisiert wir
 
 double gameSpeed = 0.0;
 
+bool game_start_flag = true;
+
 #define EEPROMHighscore 0  // Highscore permant in EEPROM speichern
 int highscore = 0;
 int score = 0;
@@ -134,14 +136,19 @@ int milestone_melody[] = { 349, 370, 392, 415 };
 int milestone_melody_durations[] = { 125, 125, 125, 250 };
 int milestone_melody_length = sizeof(milestone_melody) / sizeof(milestone_melody[0]);
 
-// intializes the melody function
+int start_melody[] = { 392, 440, 587, 784 };
+int start_melody_durations[] = { 200, 200, 200, 300, 600 };
+int start_melody_length = sizeof(start_melody) / sizeof(start_melody[0]);
+
+// intializes melody variables
 int* current_melody;
 int* current_melody_durations;
 int current_melody_length = 0;
 int current_note_index = 0;
-unsigned long prev_time_in_millis = 0;
 bool melody_is_playing_flag = false;
 unsigned long game_over_time_in_millis = 0;
+unsigned long prev_time_in_millis = 0;
+unsigned long  start_time_in_millis = 0;
 
 void jumpButtonFunc() {
   dino.jumping = true;
@@ -350,7 +357,7 @@ void updateCloud() {
   if (cloud.x + cloud.width < 0) {
     cloud.x = tft.width() + random(30, 70);
   }
-  tft.drawBitmap(cloud.x, cloud.y, epd_bitmap_cloud, cloud.width, cloud.height, tft.color565(150, 150, 150));
+ 
 }
 
 void updateSprite(Sprite& c) {
@@ -538,7 +545,35 @@ void updateMelody() {
   }
 }
 
-void loop() {
+void draw_start_screen() {
+  tft.fillScreen(ST7735_WHITE);
+
+  tft.setTextColor(ST7735_BLACK);
+  tft.setTextSize(2);
+  tft.setCursor(40, 10);
+  tft.print("Dino Run");
+  tft.setTextSize(1);
+  tft.setCursor(89,50);
+  tft.print("left: jump");
+  tft.setCursor(89,65);
+  tft.print("right: duck");
+
+  tft.drawBitmap(0, 35, epd_bitmap_start_screen_dino, 89, 84, ST7735_WHITE, ST7735_BLACK);
+}
+
+void loop() { 
+if (game_start_flag) {
+  draw_start_screen();
+    start_time_in_millis = millis();
+    playMelody(start_melody, start_melody_durations, start_melody_length);
+    while (millis() - start_time_in_millis <= 2000) {
+      updateMelody();
+      delay(10);
+    } 
+    start_time_in_millis = 0;
+    game_start_flag=false;
+    reset();
+}
   unsigned long now = millis();
   updateMelody();
   if (now - lastFPSUpdate >= 1000) {  // FPS jede Sek anzeigen
@@ -577,7 +612,9 @@ void loop() {
       updateMelody();
       delay(10);
     } 
+    delay(1000);
     game_over_time_in_millis = 0;
+    game_start_flag = true;
 
 
 #if EEPROMHighscore == 1
