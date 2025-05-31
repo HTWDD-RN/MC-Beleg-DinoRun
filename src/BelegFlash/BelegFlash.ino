@@ -561,9 +561,7 @@ void draw_start_screen() {
   tft.drawBitmap(0, 35, epd_bitmap_start_screen_dino, 89, 84, ST7735_WHITE, ST7735_BLACK);
 }
 
-void loop() { 
-if (game_start_flag) {
-  draw_start_screen();
+void play_start_melody() {
     start_time_in_millis = millis();
     playMelody(start_melody, start_melody_durations, start_melody_length);
     while (millis() - start_time_in_millis <= 2000) {
@@ -571,8 +569,14 @@ if (game_start_flag) {
       delay(10);
     } 
     start_time_in_millis = 0;
-    game_start_flag=false;
-    reset();
+}
+
+void loop() { 
+if (game_start_flag) {
+  draw_start_screen();
+  play_start_melody();
+  game_start_flag=false;
+  reset();
 }
   unsigned long now = millis();
   updateMelody();
