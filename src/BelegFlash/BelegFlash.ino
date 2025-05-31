@@ -358,7 +358,7 @@ void updateCloud() {
   if (cloud.x + cloud.width < 0) {
     cloud.x = tft.width() + random(30, 70);
   }
- 
+  tft.drawBitmap(cloud.x, cloud.y, epd_bitmap_cloud, cloud.width, cloud.height, tft.color565(150, 150, 150));
 }
 
 void updateSprite(Sprite& c) {
