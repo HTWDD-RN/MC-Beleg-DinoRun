@@ -141,6 +141,7 @@ int current_melody_length = 0;
 int current_note_index = 0;
 unsigned long prev_time_in_millis = 0;
 bool melody_is_playing_flag = false;
+unsigned long game_over_time_in_millis = 0;
 
 void jumpButtonFunc() {
   dino.jumping = true;
@@ -556,9 +557,9 @@ void loop() {
   framecount++;
   unsigned long frameStart = millis();
 
-if (score%100 == 0 && score !=0) {
-    playMelody(milestone_melody, milestone_melody_durations, milestone_melody_length);
-  }
+  if (score%100 == 0 && score !=0) {
+      playMelody(milestone_melody, milestone_melody_durations, milestone_melody_length);
+    }
 
   int status = drawFrame();
   if (status == 1) {  // tot -> GameOver
@@ -570,7 +571,14 @@ if (score%100 == 0 && score !=0) {
     tft.print("GAME OVER");
     tft.setTextColor(ST7735_BLACK);
     tft.setTextSize(1);
+    game_over_time_in_millis = millis();
     playMelody(loss_melody, loss_melody_durations, loss_melody_length);
+    while (millis() - game_over_time_in_millis <= 2000) {
+      updateMelody();
+      delay(10);
+    } 
+    game_over_time_in_millis = 0;
+
 
 #if EEPROMHighscore == 1
     // neuer Highscore?
@@ -585,7 +593,7 @@ if (score%100 == 0 && score !=0) {
     }
 #endif
 
-    delay(2000);
+    delay(1000);
     reset();
   } else if (status == 0) {  // geht weiter
     unsigned long frameEnd = millis();
