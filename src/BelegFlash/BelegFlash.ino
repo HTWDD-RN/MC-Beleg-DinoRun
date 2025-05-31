@@ -105,6 +105,7 @@ int fps = 0;
 unsigned long framecount = 0;
 unsigned long lastFramecount = 0;
 unsigned long lastFPSUpdate = 0;
+const int MILESTONE = 100;
 
 int targetFrameTime = 1000 / 20;  // Ziel Frametime in ms, wird reduziert durch Zeichenaufwand
 bool animate = false;             // Flag ob animiert und score aktualisiert wird, gesetzt jeden anderen Frame
@@ -590,15 +591,12 @@ if (game_start_flag) {
     tft.print(String("FPS:") + fps);
     Serial.println(String("FPS: ") + fps);
   }
-  if (gameSpeed <= 5) {
-    gameSpeed += 0.0025;  // langsames erhöhen der Geschwindigkeit
+  if (gameSpeed <= 5 && score%MILESTONE == 0 && score !=0) {
+    gameSpeed += 0.8;  
+    playMelody(milestone_melody, milestone_melody_durations, milestone_melody_length);
   }
   framecount++;
   unsigned long frameStart = millis();
-
-  if (score%100 == 0 && score !=0) {
-      playMelody(milestone_melody, milestone_melody_durations, milestone_melody_length);
-    }
 
   int status = drawFrame();
   if (status == 1) {  // tot -> GameOver
