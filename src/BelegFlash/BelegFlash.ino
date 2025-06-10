@@ -160,9 +160,12 @@ unsigned long  start_time_in_millis = 0;
 unsigned long jump_time_time_in_millis = 0;
 
 void jumpButtonFunc() {
-  dino.jumping = true;
-  jump_melody_flag = true;
-  //jump = true;
+  // Jump PIN is used to start the game as well 
+  if (!game_start_flag) {
+    dino.jumping = true;
+    jump_melody_flag = true;
+    //jump = true;
+  }
 }
 
 void setup() {
@@ -278,7 +281,6 @@ void initBird() {
 
 void reset() {
   tft.fillScreen(ST7735_WHITE);
-
   tft.setCursor(55, 5);
   tft.print("HI:");
 
@@ -575,23 +577,21 @@ void draw_start_screen() {
   tft.drawBitmap(0, 35, epd_bitmap_start_screen_dino, 89, 84, ST7735_WHITE, ST7735_BLACK);
 }
 
-void play_start_melody() {
-    start_time_in_millis = millis();
-    playMelody(start_melody, start_melody_durations, start_melody_length);
-    while (millis() - start_time_in_millis <= 2000) {
-      updateMelody();
-      delay(10);
-    } 
-    start_time_in_millis = 0;
-}
-
 void loop() { 
-if (game_start_flag) {
-  draw_start_screen();
-  play_start_melody();
-  game_start_flag=false;
-  reset();
-}
+  if (game_start_flag) {
+    draw_start_screen();
+    playMelody(start_melody, start_melody_durations, start_melody_length);
+    while (1) {
+      updateMelody();
+      if (digitalRead(JMP_BUTTON_PIN) == LOW ) {
+        game_start_flag = false;
+        delay(50);
+        reset();
+        break;
+      }
+    }
+  } 
+
   unsigned long now = millis();
   updateMelody();
   if (now - lastFPSUpdate >= 1000) {  // FPS jede Sek anzeigen
@@ -635,7 +635,6 @@ if (game_start_flag) {
     game_over_time_in_millis = 0;
     game_start_flag = true;
 
-
 #if EEPROMHighscore == 1
     // neuer Highscore?
     Serial.println(String("EEPROM val: ") + EEPROM.get(0, highscore));
@@ -648,7 +647,6 @@ if (game_start_flag) {
       highscore = score;
     }
 #endif
-
     delay(1000);
     reset();
   } else if (status == 0) {  // geht weiter
