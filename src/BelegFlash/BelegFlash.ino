@@ -141,18 +141,27 @@ int start_melody[] = { 392, 440, 587, 784 };
 int start_melody_durations[] = { 200, 200, 200, 300, 600 };
 int start_melody_length = sizeof(start_melody) / sizeof(start_melody[0]);
 
+int jump_melody[] = {660, 880};
+int jump_melody_durations[] = {20 , 20};
+int jump_melody_length = sizeof(jump_melody) / sizeof(jump_melody[0]);
+
 // intializes melody variables
 int* current_melody;
 int* current_melody_durations;
 int current_melody_length = 0;
 int current_note_index = 0;
+
 bool melody_is_playing_flag = false;
+bool jump_melody_flag = false;
+
 unsigned long game_over_time_in_millis = 0;
 unsigned long prev_time_in_millis = 0;
 unsigned long  start_time_in_millis = 0;
+unsigned long jump_time_time_in_millis = 0;
 
 void jumpButtonFunc() {
   dino.jumping = true;
+  jump_melody_flag = true;
   //jump = true;
 }
 
@@ -458,6 +467,10 @@ void deleteDino() {
 void calcJump() {
   // Todo: Sprungpos. dynamisch berechnen
   if (dino.jumping == true && dino.ducking == false) {
+    if (jump_melody_flag) {
+      playMelody(jump_melody, jump_melody_durations, jump_melody_length);
+      jump_melody_flag = false;
+    }
     dino.y += jumpHeights[jumpProgress];
     jumpProgress++;
 
@@ -608,6 +621,10 @@ if (game_start_flag) {
     tft.print("GAME OVER");
     tft.setTextColor(ST7735_BLACK);
     tft.setTextSize(1);
+    // ensure that the jumping melody is not overlapping with the game over melody
+    melody_is_playing_flag = false;
+    noTone(BUZZER_PIN);
+    // play game over melody
     game_over_time_in_millis = millis();
     playMelody(loss_melody, loss_melody_durations, loss_melody_length);
     while (millis() - game_over_time_in_millis <= 2000) {
