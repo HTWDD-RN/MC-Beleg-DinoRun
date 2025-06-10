@@ -156,8 +156,12 @@ bool jump_melody_flag = false;
 
 unsigned long game_over_time_in_millis = 0;
 unsigned long prev_time_in_millis = 0;
-unsigned long  start_time_in_millis = 0;
 unsigned long jump_time_time_in_millis = 0;
+
+// timestamp + flag for the display of the highscore
+long unsigned blink_intervall_in_millis = 200;
+long unsigned blink_timestamp_in_millis = 0;
+bool is_blinking = false;
 
 void jumpButtonFunc() {
   // Jump PIN is used to start the game as well 
@@ -566,13 +570,16 @@ void draw_start_screen() {
 
   tft.setTextColor(ST7735_BLACK);
   tft.setTextSize(2);
-  tft.setCursor(40, 10);
+  tft.setCursor(35, 10);
   tft.print("Dino Run");
   tft.setTextSize(1);
-  tft.setCursor(89,50);
+  tft.setCursor(89,63);
   tft.print("left: jump");
-  tft.setCursor(89,65);
+  tft.setCursor(89,78);
   tft.print("right: duck");
+  tft.setCursor(89,110);
+  tft.setTextColor(ST7735_BLUE);
+  tft.print("left: start");
 
   tft.drawBitmap(0, 35, epd_bitmap_start_screen_dino, 89, 84, ST7735_WHITE, ST7735_BLACK);
 }
@@ -592,6 +599,20 @@ bool handle_pressed_buttons(){
   return false;
 }
 
+void blinkingHighScore() {
+  if (!is_blinking) {
+    is_blinking = !is_blinking;
+    blink_timestamp_in_millis = millis();
+  }
+  if (millis() - blink_timestamp_in_millis > blink_intervall_in_millis) {
+    uint16_t color = tft.color565(random(0, 255), random(0, 255), random(0, 255));
+    tft.setTextColor(color);
+    tft.setCursor(50, 35);
+    tft.print("Highscore:" + String(highscore));
+    is_blinking = false;
+  }
+}
+
 void loop() { 
   // Start Screen + User Interaction
   if (game_start_flag) {
@@ -599,6 +620,7 @@ void loop() {
     playMelody(start_melody, start_melody_durations, start_melody_length);
     while (1) {
       updateMelody();
+      blinkingHighScore();
       if (handle_pressed_buttons()) break;
     }
   } 
