@@ -584,11 +584,16 @@ void loop() {
     while (1) {
       updateMelody();
       // start the game when the left button is pressed
-      if (digitalRead(JMP_BUTTON_PIN) == LOW ) {
+      if (digitalRead(JMP_BUTTON_PIN) == LOW) {
         game_start_flag = false;
         delay(50);
         reset();
         break;
+      } else if (digitalRead(DUCK_BUTTON_PIN) == LOW)  {
+        DarkMode = !DarkMode;
+        tft.invertDisplay(DarkMode); 
+        draw_start_screen();
+        delay(50);
       }
     }
   } 
