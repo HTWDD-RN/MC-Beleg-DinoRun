@@ -577,28 +577,34 @@ void draw_start_screen() {
   tft.drawBitmap(0, 35, epd_bitmap_start_screen_dino, 89, 84, ST7735_WHITE, ST7735_BLACK);
 }
 
+bool handle_pressed_buttons(){
+  if (digitalRead(JMP_BUTTON_PIN) == LOW) {
+    game_start_flag = false;
+    delay(50);
+    reset();
+    return true;
+  } else if (digitalRead(DUCK_BUTTON_PIN) == LOW)  {
+    DarkMode = !DarkMode;
+    tft.invertDisplay(DarkMode); 
+    draw_start_screen();
+    delay(50);
+  }
+  return false;
+}
+
 void loop() { 
+  // Start Screen + User Interaction
   if (game_start_flag) {
     draw_start_screen();
     playMelody(start_melody, start_melody_durations, start_melody_length);
     while (1) {
       updateMelody();
-      // start the game when the left button is pressed
-      if (digitalRead(JMP_BUTTON_PIN) == LOW) {
-        game_start_flag = false;
-        delay(50);
-        reset();
-        break;
-      } else if (digitalRead(DUCK_BUTTON_PIN) == LOW)  {
-        DarkMode = !DarkMode;
-        tft.invertDisplay(DarkMode); 
-        draw_start_screen();
-        delay(50);
-      }
+      if (handle_pressed_buttons()) break;
     }
   } 
 
   unsigned long now = millis();
+  // Play music if a melody is triggered
   updateMelody();
   if (now - lastFPSUpdate >= 1000) {  // FPS jede Sek anzeigen
     fps = framecount - lastFramecount;
