@@ -621,6 +621,10 @@ if (game_start_flag) {
     tft.print("GAME OVER");
     tft.setTextColor(ST7735_BLACK);
     tft.setTextSize(1);
+    // ensure that the jumping melody is not overlapping with the game over melody
+    melody_is_playing_flag = false;
+    noTone(BUZZER_PIN);
+    // play game over melody
     game_over_time_in_millis = millis();
     playMelody(loss_melody, loss_melody_durations, loss_melody_length);
     while (millis() - game_over_time_in_millis <= 2000) {
