@@ -141,15 +141,21 @@ int start_melody[] = { 392, 440, 587, 784 };
 int start_melody_durations[] = { 200, 200, 200, 300, 600 };
 int start_melody_length = sizeof(start_melody) / sizeof(start_melody[0]);
 
+int jump_melody[] = {660, 880};
+int jump_melody_durations[30, 30];
+int jump_melody_length = sizeof(jump_melody) / sizeof(jumpe_melody[0]);
+
 // intializes melody variables
 int* current_melody;
 int* current_melody_durations;
 int current_melody_length = 0;
 int current_note_index = 0;
 bool melody_is_playing_flag = false;
+
 unsigned long game_over_time_in_millis = 0;
 unsigned long prev_time_in_millis = 0;
 unsigned long  start_time_in_millis = 0;
+unsigned long jump_time_time_in_millis = 0;
 
 void jumpButtonFunc() {
   dino.jumping = true;
@@ -512,7 +518,7 @@ int drawFrame() {
   deleteDino();
   calcJump();
   checkDinoCollision();
-
+  
   int status = drawDino();
   return status;
 }
