@@ -99,7 +99,7 @@ const int validObstaclesLength = sizeof(validObstacles) / sizeof(validObstacles[
 #define ScoreX 5
 #define ScoreY 5
 
-bool DarkMode = true;
+bool DarkMode = false;
 
 int fps = 0;
 unsigned long framecount = 0;
@@ -583,6 +583,7 @@ void loop() {
     playMelody(start_melody, start_melody_durations, start_melody_length);
     while (1) {
       updateMelody();
+      // start the game when the left button is pressed
       if (digitalRead(JMP_BUTTON_PIN) == LOW ) {
         game_start_flag = false;
         delay(50);
