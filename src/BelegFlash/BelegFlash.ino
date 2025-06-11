@@ -284,6 +284,7 @@ void initBird() {
 }
 
 void reset() {
+  tft.setTextColor(ST7735_BLACK);
   tft.fillScreen(ST7735_WHITE);
   tft.setCursor(55, 5);
   tft.print("HI:");
@@ -581,7 +582,7 @@ void draw_start_screen() {
   tft.setTextColor(ST7735_BLUE);
   tft.print("left: start");
 
-  tft.drawBitmap(0, 35, epd_bitmap_start_screen_dino, 89, 84, ST7735_WHITE, ST7735_BLACK);
+  tft.drawBitmap(0, 40, epd_bitmap_start_screen_dino, 89, 84, ST7735_WHITE, ST7735_BLACK);
 }
 
 bool handle_pressed_buttons(){
@@ -593,8 +594,8 @@ bool handle_pressed_buttons(){
   } else if (digitalRead(DUCK_BUTTON_PIN) == LOW)  {
     DarkMode = !DarkMode;
     tft.invertDisplay(DarkMode); 
-    draw_start_screen();
-    delay(50);
+    //draw_start_screen();
+    delay(250);
   }
   return false;
 }
@@ -621,10 +622,11 @@ void loop() {
     while (1) {
       updateMelody();
       blinkingHighScore();
-      if (handle_pressed_buttons()) break;
+      if (handle_pressed_buttons()) {
+        break;
+      }
     }
   } 
-
   unsigned long now = millis();
   // Play music if a melody is triggered
   updateMelody();
