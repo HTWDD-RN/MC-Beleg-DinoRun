@@ -582,7 +582,7 @@ void draw_start_screen() {
   tft.setTextColor(ST7735_BLUE);
   tft.print("left: start");
 
-  tft.drawBitmap(0, 40, epd_bitmap_start_screen_dino, 89, 84, ST7735_WHITE, ST7735_BLACK);
+  tft.drawBitmap(5, 45, epd_bitmap_start_screen_dino, 75, 75, ST7735_WHITE, ST7735_BLACK);
 }
 
 bool handle_pressed_buttons(){
