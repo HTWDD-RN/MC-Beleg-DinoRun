@@ -184,6 +184,9 @@ long unsigned blink_intervall_in_millis = 200;
 long unsigned blink_timestamp_in_millis = 0;
 bool is_blinking = false;
 
+// timestamp when jump started
+long unsigned start_jump_timestamp_in_millis = 0;
+
 void jumpButtonFunc() {
   // Jump PIN is used to start the game as well 
   if (!game_start_flag) {
@@ -497,13 +500,24 @@ void deleteDino() {
     tft.fillRect(dino.x, dino.y, dino.width, dino.height, ST7735_WHITE);  // Normaler Dino
   }
 }
+int jump_start_coordinate = dino.yStart;
+int jump_top_coordinate = 45;
+int unsigned long jump_duration = 1500; 
+int jump_steps = 18;
+int unsigned long delta_time_in_millis = 0;
 
 void calcJump() {
+
+  
+
+
   // Todo: Sprungpos. dynamisch berechnen
   if (dino.jumping == true && dino.ducking == false) {
     if (jumpProgress == 0) {
       jump_melody_flag = true; 
       start_jump_melody_timestamp_in_millis = millis();
+
+      start_jump_timestamp_in_millis = millis();
     }
     if (jump_melody_flag) {
       playMelody(jump_melody, jump_melody_durations, jump_melody_length);
@@ -511,13 +525,17 @@ void calcJump() {
       if (millis() - start_jump_melody_timestamp_in_millis < jump_melody_aggregate_duration_in_millis)
       jump_melody_flag = false;
     }
-    dino.y += jumpHeights[jumpProgress];
-    jumpProgress++;
 
+    delta_time_in_millis = millis() - start_jump_timestamp_in_millis;
+    jumpProgress = delta_time_in_millis/jump_duration * jump_steps;
+    Serial.println(String("jumpProgress") + jumpProgress);
     if (jumpProgress >= jumpLength) {
       dino.jumping = false;
       jumpProgress = 0;
       start_jump_melody_timestamp_in_millis = 0;
+    } else {
+      dino.y += jumpHeights[jumpProgress];
+      Serial.println(String("dinoY") + dino.y);
     }
   }
 }
