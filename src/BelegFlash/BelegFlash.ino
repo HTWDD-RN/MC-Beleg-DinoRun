@@ -105,18 +105,16 @@ int fps = 0;
 unsigned long framecount = 0;
 unsigned long lastFramecount = 0;
 unsigned long lastFPSUpdate = 0;
-const int MILESTONE = 100;
 
-int targetFrameTime = 1000 / 25;  // Ziel Frametime in ms, wird reduziert durch Zeichenaufwand
+int targetFrameTime = 1000 / 31;  // Ziel Frametime in ms, wird reduziert durch Zeichenaufwand
 bool animate = false;             // Flag ob animiert und score aktualisiert wird, gesetzt jeden 3. Frame
-
-
 
 bool game_start_flag = true;
 
 #define EEPROMHighscore 0  // Highscore permant in EEPROM speichern
 int highscore = 0;
 int score = 0;
+const int MILESTONE = 100;
 
 int lastScore = 0;
 double gameSpeed = 0.0;
@@ -125,7 +123,7 @@ int dead = 0;
 
 // initalize variables for the jump
 const int JUMP_TOP_COORDINATE = 45;
-int unsigned long jump_duration_in_millis = 1000; 
+int unsigned long jump_duration = 800; 
 float jump_progress = 0.0;
 bool jumping_flag = false;
 
@@ -147,12 +145,12 @@ int jump_melody_durations[] = {20 , 20};
 int jump_melody_length = sizeof(jump_melody) / sizeof(jump_melody[0]);
 
 // init the variables that ensure that the jump melody is played only once during a jump
-int jump_melody_aggregate_duration_in_millis = 0;
-long unsigned start_jump_melody_timestamp_in_millis = 0;
+int jump_melody_aggregate_duration = 0;
+long unsigned start_jump_melody_timestamp = 0;
 
 void intializeJumpMelodyAggregateDuration() {
   for (int i = 0; i<jump_melody_length; i++) {
-    jump_melody_aggregate_duration_in_millis += jump_melody_durations[i];
+    jump_melody_aggregate_duration += jump_melody_durations[i];
   }
 }
 
@@ -165,23 +163,22 @@ int current_note_index = 0;
 bool melody_is_playing_flag = false;
 bool jump_melody_flag = false;
 
-unsigned long game_over_time_in_millis = 0;
-unsigned long prev_time_in_millis = 0;
-unsigned long jump_time_time_in_millis = 0;
+unsigned long game_over_time = 0;
+unsigned long prev_time = 0;
+unsigned long jump_time_time = 0;
 
 // timestamp + flag for the display of the highscore
-long unsigned blink_intervall_in_millis = 200;
-long unsigned blink_timestamp_in_millis = 0;
+long unsigned blink_intervall = 200;
+long unsigned blink_timestamp = 0;
 bool is_blinking = false;
 
 // timestamp when jump started
-long unsigned start_jump_timestamp_in_millis = 0;
+long unsigned start_jump_timestamp = 0;
 
 void jumpButtonFunc() {
   // Jump PIN is used to start the game as well 
   if (!game_start_flag) {
     dino.jumping = true;
-    //jump = true;
   }
 }
 
@@ -248,7 +245,7 @@ void initCactus() {
   cactus.height = 48;
   cactus.x = tft.width() + random(0, 60);
   cactus.y = 80;
-  cactus.dx = 4;
+  cactus.dx = 3;
   cactus.frame = 0;
 }
 
@@ -258,7 +255,7 @@ void initCactus2() {
   cactus2.height = 46;
   cactus2.x = tft.width() + random(0, 60);
   cactus2.y = 82;
-  cactus2.dx = 4;
+  cactus2.dx = 3;
   cactus2.frame = 0;
 }
 
@@ -268,7 +265,7 @@ void initCactus3() {
   cactus3.height = 48;
   cactus3.x = tft.width() + random(0, 60);
   cactus3.y = 80;
-  cactus3.dx = 5;
+  cactus3.dx = 3;
   cactus3.frame = 0;
 }
 
@@ -278,7 +275,7 @@ void initCactus4() {
   cactus4.height = 32;
   cactus4.x = tft.width() + random(0, 60);
   cactus4.y = 90;
-  cactus4.dx = 4;
+  cactus4.dx = 3;
   cactus4.frame = 0;
 }
 
@@ -294,7 +291,7 @@ void initBird() {
     bird.y = 80;
   }
 
-  bird.dx = 5;
+  bird.dx = 4;
   bird.frame = 0;
 }
 
@@ -499,32 +496,32 @@ void calcJump() {
     {
       jumping_flag = true;
       jump_melody_flag = true; 
-      start_jump_melody_timestamp_in_millis = millis();
-      start_jump_timestamp_in_millis = millis();
+      start_jump_melody_timestamp = millis();
+      start_jump_timestamp = millis();
 
     }
     // play the jump melody, stop playing after the melody duration, ensure that the melody is triggered only once per jump
     if (jump_melody_flag) {
       playMelody(jump_melody, jump_melody_durations, jump_melody_length);
-      if (millis() - start_jump_melody_timestamp_in_millis < jump_melody_aggregate_duration_in_millis)
+      if (millis() - start_jump_melody_timestamp < jump_melody_aggregate_duration)
       jump_melody_flag = false;
     }
 
     // get the time passed since the jump started 
-    int unsigned long delta_time_in_millis = millis() - start_jump_timestamp_in_millis;
-    Serial.print(String(" delta_time_in_millis:") + delta_time_in_millis);
+    int unsigned long delta_time = millis() - start_jump_timestamp;
+    Serial.print(String(" delta_time:") + delta_time);
     Serial.print(String(" millis():") + millis());
-    Serial.print(String(" start_jump_timestamp_in_millis:") + start_jump_timestamp_in_millis);
+    Serial.print(String(" start_jump_timestamp:") + start_jump_timestamp);
 
     // calculate the fraction of the jump progress -> value between 0 and 1
-    jump_progress = ((float)delta_time_in_millis/(float)jump_duration_in_millis);
+    jump_progress = ((float)delta_time / (float)jump_duration);
     Serial.print(String(" jump progress:") + jump_progress);
 
     // stop the jump if the jump duration is exceeded
     if (jump_progress >= 1.0f) {
       dino.jumping = false;
       dino.y = dino.yStart;
-      start_jump_melody_timestamp_in_millis = 0;
+      start_jump_melody_timestamp = 0;
       jump_progress = 0.0;
       jumping_flag = false;
       jump_melody_flag = false;
@@ -532,8 +529,15 @@ void calcJump() {
     }
 
     // calculate the next y-coordinate
-    float  offset = sin(jump_progress * PI) * JUMP_TOP_COORDINATE;
-    Serial.print(String(" offset:") + offset  + '\n');
+    float steepness = 0.6; // smaller -> sharper jump
+    float base = sin(jump_progress * PI);
+    float offset = pow(fabs(base), steepness) * JUMP_TOP_COORDINATE;
+
+    // restore prefix (+/-)
+    if (base < 0) offset = -offset;
+
+    Serial.println(String(" offset:") + offset);
+
     // set the next y-coordinate
     dino.y = dino.yStart - (int)offset;
 
@@ -596,10 +600,10 @@ void playMelody(int melody[], int durations[], int melody_length) {
     current_melody_length = melody_length;
     current_note_index = 0;
     melody_is_playing_flag = true;
-    prev_time_in_millis = millis();
+    prev_time = millis();
     tone(BUZZER_PIN, current_melody[current_note_index], current_melody_durations[current_note_index]);
   } else {
-    if (millis() - prev_time_in_millis >= current_melody_durations[current_note_index]) {
+    if (millis() - prev_time >= current_melody_durations[current_note_index]) {
       if (current_melody_length-1 != current_note_index) {
         current_note_index += 1;
         tone(BUZZER_PIN, current_melody[current_note_index], current_melody_durations[current_note_index]);
@@ -607,7 +611,7 @@ void playMelody(int melody[], int durations[], int melody_length) {
         melody_is_playing_flag = false;
         noTone(BUZZER_PIN);
       }
-      prev_time_in_millis = millis();
+      prev_time = millis();
     }
   }
 }
@@ -659,16 +663,16 @@ bool handle_pressed_buttons(){
 void blinkingHighScore() {
   if (!is_blinking) {
     is_blinking = !is_blinking;
-    blink_timestamp_in_millis = millis();
+    blink_timestamp = millis();
   }
-  if (millis() - blink_timestamp_in_millis > blink_intervall_in_millis) {
+  if (millis() - blink_timestamp > blink_intervall) {
     uint16_t color = tft.color565(random(0, 255), random(0, 255), random(0, 255));
     tft.setTextColor(color);
 
     int highscore_length = (String(highscore).length() + String("Highscore").length())*6;
     int start_drawing = (tft.width() - highscore_length)/2;
     tft.setCursor(start_drawing, 35);
-    Serial.print(String("Highscore") + highscore_length);
+    //Serial.print(String("Highscore") + highscore_length);
     tft.print("Highscore:" + String(highscore));
     is_blinking = false;
   }
@@ -687,6 +691,9 @@ void loop() {
       }
     }
   } 
+  framecount++;
+  unsigned long frameStart = millis();
+
   unsigned long now = millis();
   // Play music if a melody is triggered
   updateMelody();
@@ -700,17 +707,36 @@ void loop() {
     tft.print(String("FPS:") + fps);
     Serial.println(String("FPS: ") + fps);
   }
-  if (gameSpeed <= 5 && score%MILESTONE == 0 && score !=0 && score != lastScore) {
+  if (gameSpeed <= 4 && score % MILESTONE == 0 && score != 0 && score != lastScore) {
     gameSpeed += 0.5;
     lastScore = score; // only trigger once per score
     Serial.println(String("Speed: ") + gameSpeed);
     playMelody(milestone_melody, milestone_melody_durations, milestone_melody_length);
   }
-  framecount++;
-  unsigned long frameStart = millis();
 
   int status = drawFrame();
-  if (status == 1) {  // tot -> GameOver
+  if (status == 0) {  // geht weiter
+    unsigned long frameEnd = millis();
+    unsigned long frameTime = frameEnd - frameStart;
+
+    // DeltaTime
+    if (targetFrameTime - (int)frameTime <= 0) {  // FPS drop! -> mehr Zeit zum Zeichnen benötigt als TargetFrameTime
+      delay(0);
+    } else {
+      delay(targetFrameTime - (int)frameTime);
+    }
+
+    tft.fillRect(tft.width() - 29, 17, 35, 10, ST7735_WHITE);
+    tft.setCursor(tft.width() - 29, 17);
+    tft.print(frameTime);
+    tft.print("ms");
+
+    // animieren jeden 4. Frame
+    if (framecount % 4 == 0) {
+      animate = true;
+      score++;
+    }
+  } else if (status == 1) {  // tot -> GameOver
     tft.setTextSize(2);
 
     if (DarkMode){  // invert colors
@@ -726,18 +752,20 @@ void loop() {
     tft.print("GAME OVER");
     tft.setTextColor(ST7735_BLACK);
     tft.setTextSize(1);
+
     // ensure that the jumping melody is not overlapping with the game over melody
     melody_is_playing_flag = false;
     noTone(BUZZER_PIN);
+
     // play game over melody
-    game_over_time_in_millis = millis();
+    game_over_time = millis();
     playMelody(loss_melody, loss_melody_durations, loss_melody_length);
-    while (millis() - game_over_time_in_millis <= 2000) {
+    while (millis() - game_over_time <= 2000) {
       updateMelody();
       delay(10);
     } 
     delay(1000);
-    game_over_time_in_millis = 0;
+    game_over_time = 0;
     game_start_flag = true;
 
 #if EEPROMHighscore == 1
@@ -754,25 +782,5 @@ void loop() {
 #endif
     delay(1000);
     reset();
-  } else if (status == 0) {  // geht weiter
-    unsigned long frameEnd = millis();
-    unsigned long frameTime = frameEnd - frameStart;
-
-    // DeltaTime
-    if (targetFrameTime - (int)frameTime <= 0) {  // FPS drop! -> mehr Zeit zum Zeichnen benötigt als TargetFrameTime
-      delay(0);
-    } else {
-      delay(targetFrameTime - (int)frameTime);
-    }
-
-    tft.fillRect(tft.width() - 29, 17, 35, 10, ST7735_WHITE);
-    tft.setCursor(tft.width() - 29, 17);
-    tft.print(frameTime);
-    tft.print("ms");
-    // animieren jeden 3. Frame
-    if (framecount % 3 == 0) {
-      animate = true;
-      score++;
-    }
   }
 }
