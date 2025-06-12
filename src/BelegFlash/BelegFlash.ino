@@ -121,23 +121,13 @@ int score = 0;
 int lastScore = 0;
 double gameSpeed = 0.0;
 
-/*
-const int jumpHeights[] = { // 20fps
-  -13, -10, -7, -5, -4, -3, -2, -1,
-  0,
-  1, 2, 3, 4, 5, 7, 10, 13
-};
-*/
-
-const int jumpHeights[] = {
-  -13 ,-9, -7, -5, -4, -3, -2, -1, -1,
-  0,
-  1, 1, 2, 3, 4, 5, 7, 9, 13
-};
-const int jumpLength = sizeof(jumpHeights) / sizeof(jumpHeights[0]);  // Länge = ArrayLänge in Byte / Größe ArrayElement
-int jumpProgress = 0;
-
 int dead = 0;
+
+// initalize variables for the jump
+const int JUMP_TOP_COORDINATE = 45;
+int unsigned long jump_duration_in_millis = 1000; 
+float jump_progress = 0.0;
+bool jumping_flag = false;
 
 // defines different melodies
 int loss_melody[] = { 330, 311, 294, 277, 262, 247 };
@@ -183,6 +173,9 @@ unsigned long jump_time_time_in_millis = 0;
 long unsigned blink_intervall_in_millis = 200;
 long unsigned blink_timestamp_in_millis = 0;
 bool is_blinking = false;
+
+// timestamp when jump started
+long unsigned start_jump_timestamp_in_millis = 0;
 
 void jumpButtonFunc() {
   // Jump PIN is used to start the game as well 
@@ -325,7 +318,6 @@ void reset() {
   lastFramecount = 0;
   lastFPSUpdate = 0;
 
-  jumpProgress = 0;
 
   wasDucking = false;
 
@@ -498,27 +490,53 @@ void deleteDino() {
   }
 }
 
+// checked every frame
 void calcJump() {
-  // Todo: Sprungpos. dynamisch berechnen
+  // activate when the jumping interrupt is triggered and the dino is not ducking
   if (dino.jumping == true && dino.ducking == false) {
-    if (jumpProgress == 0) {
+    // only once: initialize the melody and the jump when the jump has started
+    if (!jumping_flag)
+    {
+      jumping_flag = true;
       jump_melody_flag = true; 
       start_jump_melody_timestamp_in_millis = millis();
+      start_jump_timestamp_in_millis = millis();
+
     }
+    // play the jump melody, stop playing after the melody duration, ensure that the melody is triggered only once per jump
     if (jump_melody_flag) {
       playMelody(jump_melody, jump_melody_durations, jump_melody_length);
-      // Set jump_melody_flag to false after the jump_melody is played 
       if (millis() - start_jump_melody_timestamp_in_millis < jump_melody_aggregate_duration_in_millis)
       jump_melody_flag = false;
     }
-    dino.y += jumpHeights[jumpProgress];
-    jumpProgress++;
 
-    if (jumpProgress >= jumpLength) {
+    // get the time passed since the jump started 
+    int unsigned long delta_time_in_millis = millis() - start_jump_timestamp_in_millis;
+    Serial.print(String(" delta_time_in_millis:") + delta_time_in_millis);
+    Serial.print(String(" millis():") + millis());
+    Serial.print(String(" start_jump_timestamp_in_millis:") + start_jump_timestamp_in_millis);
+
+    // calculate the fraction of the jump progress -> value between 0 and 1
+    jump_progress = ((float)delta_time_in_millis/(float)jump_duration_in_millis);
+    Serial.print(String(" jump progress:") + jump_progress);
+
+    // stop the jump if the jump duration is exceeded
+    if (jump_progress >= 1.0f) {
       dino.jumping = false;
-      jumpProgress = 0;
+      dino.y = dino.yStart;
       start_jump_melody_timestamp_in_millis = 0;
+      jump_progress = 0.0;
+      jumping_flag = false;
+      jump_melody_flag = false;
+      return;
     }
+
+    // calculate the next y-coordinate
+    float  offset = sin(jump_progress * PI) * JUMP_TOP_COORDINATE;
+    Serial.print(String(" offset:") + offset  + '\n');
+    // set the next y-coordinate
+    dino.y = dino.yStart - (int)offset;
+
   }
 }
 
