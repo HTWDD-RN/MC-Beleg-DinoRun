@@ -107,10 +107,10 @@ unsigned long lastFramecount = 0;
 unsigned long lastFPSUpdate = 0;
 const int MILESTONE = 100;
 
-int targetFrameTime = 1000 / 20;  // Ziel Frametime in ms, wird reduziert durch Zeichenaufwand
-bool animate = false;             // Flag ob animiert und score aktualisiert wird, gesetzt jeden anderen Frame
+int targetFrameTime = 1000 / 25;  // Ziel Frametime in ms, wird reduziert durch Zeichenaufwand
+bool animate = false;             // Flag ob animiert und score aktualisiert wird, gesetzt jeden 3. Frame
 
-double gameSpeed = 0.0;
+
 
 bool game_start_flag = true;
 
@@ -118,10 +118,21 @@ bool game_start_flag = true;
 int highscore = 0;
 int score = 0;
 
-const int jumpHeights[] = {
+int lastScore = 0;
+double gameSpeed = 0.0;
+
+/*
+const int jumpHeights[] = { // 20fps
   -13, -10, -7, -5, -4, -3, -2, -1,
   0,
   1, 2, 3, 4, 5, 7, 10, 13
+};
+*/
+
+const int jumpHeights[] = {
+  -13 ,-9, -7, -5, -4, -3, -2, -1, -1,
+  0,
+  1, 1, 2, 3, 4, 5, 7, 9, 13
 };
 const int jumpLength = sizeof(jumpHeights) / sizeof(jumpHeights[0]);  // Länge = ArrayLänge in Byte / Größe ArrayElement
 int jumpProgress = 0;
@@ -196,7 +207,6 @@ void setup() {
   tft.fillScreen(ST7735_WHITE);
   tft.setTextColor(ST7735_BLACK);
 
-  //initSD();
   Serial.print("");
   delay(1000);
 
@@ -233,7 +243,7 @@ void initCactus() {
   cactus.height = 48;
   cactus.x = tft.width() + random(0, 60);
   cactus.y = 80;
-  cactus.dx = 5;
+  cactus.dx = 4;
   cactus.frame = 0;
 }
 
@@ -243,7 +253,7 @@ void initCactus2() {
   cactus2.height = 46;
   cactus2.x = tft.width() + random(0, 60);
   cactus2.y = 82;
-  cactus2.dx = 5;
+  cactus2.dx = 4;
   cactus2.frame = 0;
 }
 
@@ -263,7 +273,7 @@ void initCactus4() {
   cactus4.height = 32;
   cactus4.x = tft.width() + random(0, 60);
   cactus4.y = 90;
-  cactus4.dx = 5;
+  cactus4.dx = 4;
   cactus4.frame = 0;
 }
 
@@ -279,7 +289,7 @@ void initBird() {
     bird.y = 80;
   }
 
-  bird.dx = 6;
+  bird.dx = 5;
   bird.frame = 0;
 }
 
@@ -296,6 +306,7 @@ void reset() {
 
   score = 0;
   gameSpeed = 0.0;
+  lastScore = 0;
 
   fps = 0;
   framecount = 0;
@@ -450,7 +461,11 @@ int drawDino() {
     drawObstacle();
     drawHitboxes();
 
-    tft.drawBitmap(dino.x, dino.y, epd_bitmap_dead, dino.width, dino.height, ST7735_RED);
+    if (DarkMode){  // invert colors
+      tft.drawBitmap(dino.x, dino.y, epd_bitmap_dead, dino.width, dino.height, 0x07FF);
+    } else {
+      tft.drawBitmap(dino.x, dino.y, epd_bitmap_dead, dino.width, dino.height, ST7735_RED);
+    }
 
     return 1;
   }
@@ -575,11 +590,15 @@ void draw_start_screen() {
   tft.print("Dino Run");
   tft.setTextSize(1);
   tft.setCursor(89,63);
-  tft.print("left: jump");
+  tft.print("left:  jump");
   tft.setCursor(89,78);
   tft.print("right: duck");
   tft.setCursor(89,110);
-  tft.setTextColor(ST7735_BLUE);
+  if (DarkMode){ // invert colors
+    tft.setTextColor(0xFFE0);
+  } else {
+    tft.setTextColor(ST7735_BLUE);
+  }
   tft.print("left: start");
 
   tft.drawBitmap(5, 45, epd_bitmap_start_screen_dino, 75, 75, ST7735_WHITE, ST7735_BLACK);
@@ -593,9 +612,9 @@ bool handle_pressed_buttons(){
     return true;
   } else if (digitalRead(DUCK_BUTTON_PIN) == LOW)  {
     DarkMode = !DarkMode;
-    tft.invertDisplay(DarkMode); 
-    //draw_start_screen();
-    delay(250);
+    tft.invertDisplay(DarkMode);
+    draw_start_screen();
+    delay(50);
   }
   return false;
 }
@@ -640,8 +659,10 @@ void loop() {
     tft.print(String("FPS:") + fps);
     Serial.println(String("FPS: ") + fps);
   }
-  if (gameSpeed <= 5 && score%MILESTONE == 0 && score !=0) {
-    gameSpeed += 0.5;  
+  if (gameSpeed <= 5 && score%MILESTONE == 0 && score !=0 && score != lastScore) {
+    gameSpeed += 0.5;
+    lastScore = score; // only trigger once per score
+    Serial.println(String("Speed: ") + gameSpeed);
     playMelody(milestone_melody, milestone_melody_durations, milestone_melody_length);
   }
   framecount++;
@@ -650,9 +671,16 @@ void loop() {
   int status = drawFrame();
   if (status == 1) {  // tot -> GameOver
     tft.setTextSize(2);
-    tft.setTextColor(ST7735_RED);
-    tft.fillRect(25, 47, 112, 20, ST7735_WHITE);
-    tft.drawRect(25, 47, 112, 20, ST7735_RED);
+
+    if (DarkMode){  // invert colors
+      tft.setTextColor(0x07FF);
+      tft.fillRect(25, 47, 112, 20, ST7735_WHITE);
+      tft.drawRect(25, 47, 112, 20, 0x07FF);
+    } else{
+      tft.setTextColor(ST7735_RED);
+      tft.fillRect(25, 47, 112, 20, ST7735_WHITE);
+      tft.drawRect(25, 47, 112, 20, ST7735_RED);
+    }
     tft.setCursor(28, 50);
     tft.print("GAME OVER");
     tft.setTextColor(ST7735_BLACK);
@@ -693,15 +721,15 @@ void loop() {
     if (targetFrameTime - (int)frameTime <= 0) {  // FPS drop! -> mehr Zeit zum Zeichnen benötigt als TargetFrameTime
       delay(0);
     } else {
-      delay(targetFrameTime - round(frameTime));
+      delay(targetFrameTime - (int)frameTime);
     }
 
     tft.fillRect(tft.width() - 29, 17, 35, 10, ST7735_WHITE);
     tft.setCursor(tft.width() - 29, 17);
     tft.print(frameTime);
     tft.print("ms");
-    // animieren jeder anderen Frames
-    if (framecount % 2 == 0) {
+    // animieren jeden 3. Frame
+    if (framecount % 3 == 0) {
       animate = true;
       score++;
     }
