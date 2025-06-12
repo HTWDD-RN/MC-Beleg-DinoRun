@@ -156,6 +156,16 @@ int jump_melody[] = {660, 880};
 int jump_melody_durations[] = {20 , 20};
 int jump_melody_length = sizeof(jump_melody) / sizeof(jump_melody[0]);
 
+// init the variables that ensure that the jump melody is played only once during a jump
+int jump_melody_aggregate_duration_in_millis = 0;
+long unsigned start_jump_melody_timestamp_in_millis = 0;
+
+void intializeJumpMelodyAggregateDuration() {
+  for (int i = 0; i<jump_melody_length; i++) {
+    jump_melody_aggregate_duration_in_millis += jump_melody_durations[i];
+  }
+}
+
 // intializes melody variables
 int* current_melody;
 int* current_melody_durations;
@@ -178,7 +188,6 @@ void jumpButtonFunc() {
   // Jump PIN is used to start the game as well 
   if (!game_start_flag) {
     dino.jumping = true;
-    jump_melody_flag = true;
     //jump = true;
   }
 }
@@ -209,6 +218,9 @@ void setup() {
 
   Serial.print("");
   delay(1000);
+
+  //init requirements for jump sound
+  intializeJumpMelodyAggregateDuration();
 
   reset();
 }
@@ -489,8 +501,14 @@ void deleteDino() {
 void calcJump() {
   // Todo: Sprungpos. dynamisch berechnen
   if (dino.jumping == true && dino.ducking == false) {
+    if (jumpProgress == 0) {
+      jump_melody_flag = true; 
+      start_jump_melody_timestamp_in_millis = millis();
+    }
     if (jump_melody_flag) {
       playMelody(jump_melody, jump_melody_durations, jump_melody_length);
+      // Set jump_melody_flag to false after the jump_melody is played 
+      if (millis() - start_jump_melody_timestamp_in_millis < jump_melody_aggregate_duration_in_millis)
       jump_melody_flag = false;
     }
     dino.y += jumpHeights[jumpProgress];
@@ -499,6 +517,7 @@ void calcJump() {
     if (jumpProgress >= jumpLength) {
       dino.jumping = false;
       jumpProgress = 0;
+      start_jump_melody_timestamp_in_millis = 0;
     }
   }
 }
