@@ -646,7 +646,11 @@ void blinkingHighScore() {
   if (millis() - blink_timestamp_in_millis > blink_intervall_in_millis) {
     uint16_t color = tft.color565(random(0, 255), random(0, 255), random(0, 255));
     tft.setTextColor(color);
-    tft.setCursor(50, 35);
+
+    int highscore_length = (String(highscore).length() + String("Highscore").length())*6;
+    int start_drawing = (tft.width() - highscore_length)/2;
+    tft.setCursor(start_drawing, 35);
+    Serial.print(String("Highscore") + highscore_length);
     tft.print("Highscore:" + String(highscore));
     is_blinking = false;
   }
