@@ -7,7 +7,6 @@
 #include "Graphics.h"
 #include <SPI.h>
 #include <EEPROM.h>
-//#include <SdFat.h>
 
 // TODO:
 // - bessere Sprungberechnung mit Parabel (Gravity und Sprungzeit)
@@ -119,11 +118,11 @@ const int MILESTONE = 100;
 int lastScore = 0;
 double gameSpeed = 0.0;
 
-int dead = 0;
+bool dead = false;
 
 // initalize variables for the jump
-const int JUMP_TOP_COORDINATE = 45;
-int unsigned long jump_duration = 800; 
+const int JUMP_HEIGHT = 45;
+int unsigned long jump_duration = 800; // ms
 float jump_progress = 0.0;
 bool jumping_flag = false;
 
@@ -230,7 +229,7 @@ void initDino() {
 }
 
 void initCloud() {
-  cloud.type = SPRITE_BIRD;
+  cloud.type = SPRITE_CLOUD;
   cloud.x = tft.width() + random(-100, 70);
   cloud.y = 30;
   cloud.width = 46;
@@ -298,13 +297,14 @@ void initBird() {
 void reset() {
   tft.setTextColor(ST7735_BLACK);
   tft.fillScreen(ST7735_WHITE);
-  tft.setCursor(55, 5);
-  tft.print("HI:");
 
 #if EEPROMHighscore == 1
   EEPROM.get(0, highscore);
 #endif
-  tft.print(highscore);
+  int highscore_length = (String(highscore).length() + String("HI:").length())*6;
+  int start_drawing = (tft.width() - highscore_length)/2;
+  tft.setCursor(start_drawing, 5);
+  tft.print(String("HI:") + highscore);
 
   score = 0;
   gameSpeed = 0.0;
@@ -315,11 +315,10 @@ void reset() {
   lastFramecount = 0;
   lastFPSUpdate = 0;
 
-
   wasDucking = false;
 
   newObstacle = true;
-  dead = 0;
+  dead = false;
   animate = true;
 
   initDino();
@@ -389,14 +388,13 @@ void updateCloud() {
   tft.drawBitmap(cloud.x, cloud.y, epd_bitmap_cloud, cloud.width, cloud.height, tft.color565(150, 150, 150));
 }
 
-void updateSprite(Sprite& c) {
-  tft.fillRect(c.x, c.y, c.width, c.height, ST7735_WHITE);  // löschen
+void updateSprite(Sprite& s) {
+  tft.fillRect(s.x, s.y, s.width, s.height, ST7735_WHITE);  // löschen
 
-  // Neue Kaktusposition
-  c.x -= c.dx + (int)gameSpeed;
-  if (c.x <= -c.width) {
+  // Neue Spriteposition
+  s.x -= s.dx + (int)gameSpeed;
+  if (s.x <= -s.width) {
     newObstacle = true;
-    c.x = tft.width() + random(20, 100);
   }
 }
 
@@ -428,7 +426,7 @@ void drawObstacle() {
 int drawDino() {
   // Dino animieren
 
-  if (dead != 1) {
+  if (dead != true) {
     if (dino.frame == 0) {
       if (animate == true) {  // nur neuen Frame setzen bei gewollter Animierung
         dino.frame = 1;
@@ -492,8 +490,7 @@ void calcJump() {
   // activate when the jumping interrupt is triggered and the dino is not ducking
   if (dino.jumping == true && dino.ducking == false) {
     // only once: initialize the melody and the jump when the jump has started
-    if (!jumping_flag)
-    {
+    if (!jumping_flag) {
       jumping_flag = true;
       jump_melody_flag = true; 
       start_jump_melody_timestamp = millis();
@@ -509,13 +506,13 @@ void calcJump() {
 
     // get the time passed since the jump started 
     int unsigned long delta_time = millis() - start_jump_timestamp;
-    Serial.print(String(" delta_time:") + delta_time);
-    Serial.print(String(" millis():") + millis());
-    Serial.print(String(" start_jump_timestamp:") + start_jump_timestamp);
+    //Serial.print(String(" delta_time:") + delta_time);
+    //Serial.print(String(" millis():") + millis());
+    //Serial.print(String(" start_jump_timestamp:") + start_jump_timestamp);
 
     // calculate the fraction of the jump progress -> value between 0 and 1
     jump_progress = ((float)delta_time / (float)jump_duration);
-    Serial.print(String(" jump progress:") + jump_progress);
+    //Serial.print(String(" jump progress:") + jump_progress);
 
     // stop the jump if the jump duration is exceeded
     if (jump_progress >= 1.0f) {
@@ -531,16 +528,15 @@ void calcJump() {
     // calculate the next y-coordinate
     float steepness = 0.6; // smaller -> sharper jump
     float base = sin(jump_progress * PI);
-    float offset = pow(fabs(base), steepness) * JUMP_TOP_COORDINATE;
+    float offset = pow(fabs(base), steepness) * JUMP_HEIGHT;
 
     // restore prefix (+/-)
     if (base < 0) offset = -offset;
 
-    Serial.println(String(" offset:") + offset);
+    //Serial.println(String(" offset:") + offset);
 
     // set the next y-coordinate
     dino.y = dino.yStart - (int)offset;
-
   }
 }
 
@@ -549,12 +545,12 @@ void checkDinoCollision() {
   if (dino.ducking == true) {
     if (checkAABBCollision(dino.x + dino.padding, dino.y + dino.padding, dino.duckWidth - 2 * dino.padding, dino.duckHeight - 2 * dino.padding, obstacle->x, obstacle->y, obstacle->width, obstacle->height)) {
       Serial.println("Collison?");
-      dead = 1;
+      dead = true;
     }
   } else {
     if (checkAABBCollision(dino.x + dino.padding, dino.y + dino.padding, dino.width - 2 * dino.padding, dino.height - 2 * dino.padding, obstacle->x, obstacle->y, obstacle->width, obstacle->height)) {
       Serial.println("Collison?");
-      dead = 1;
+      dead = true;
     }
   }
 }
@@ -582,7 +578,6 @@ int drawFrame() {
   updateSprite(*obstacle);
   drawObstacle();
 
-  //updateCactus3();
   drawGround();
 
   deleteDino();
@@ -673,6 +668,9 @@ void blinkingHighScore() {
     int start_drawing = (tft.width() - highscore_length)/2;
     tft.setCursor(start_drawing, 35);
     //Serial.print(String("Highscore") + highscore_length);
+#if EEPROMHighscore == 1
+    EEPROM.get(0, highscore);
+#endif
     tft.print("Highscore:" + String(highscore));
     is_blinking = false;
   }
