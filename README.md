@@ -1,4 +1,4 @@
-# MC-Beleg-DinoRun
+# MC-Beleg DinoRun
 
 ## Ziel und Zweck
 
@@ -34,6 +34,50 @@ Bei einer Kollision wird das Spiel mit einem Game-Over-Schriftzug angehalten und
 - 1,8 Zoll SPI TFT Display ST7735 mit 128 x 160 Pixeln -> Darstellung des Spiels
 
 ## Programmstruktur
+
+**Sprite-Definition und Initalisierung**
+
+*Dino-Sprite:*
+
+| Variable   | Typ     | Beschreibung                                                                      |
+| ---------- | ------- | --------------------------------------------------------------------------------- |
+| x          | int     | x-Koordinate                                                                      |
+| y          | int     | y-Koordinate                                                                      |
+| yStart     | int     | Starthöhe des Dinos                                                               |
+| width      | int     | Breite des Dinos                                                                  |
+| height     | int     | Höhe des Dinos                                                                    |
+| duckWidth  | int     | Breite beim Ducken                                                                |
+| duckHeight | int     | Höhe beim Ducken                                                                  |
+| jumping    | bool    | Gibt an, ob der Dino gerade springt                                               |
+| ducking    | bool    | Gibt an, ob der Dino gerade geduckt ist                                           |
+| frame      | int     | Steuert die Animation; wechselt zwischen 0 und 1                                  |
+| padding    | int     | Abstand zur Kollsionsbox                                                          |
+
+*Wolken/Vogel/Kakteen:*
+
+```cpp
+enum SpriteType {
+  SPRITE_CACTUS,
+  SPRITE_CACTUS2,
+  SPRITE_CACTUS3,
+  SPRITE_CACTUS4,
+  SPRITE_BIRD,
+  SPRITE_CLOUD
+};
+```
+- Definition als Enum
+- Initialisierung über initCloud(), initBird(), initCactus(), initCactus2() etc.
+- zufällige Auswahl aus dem Array validObstacles[]
+  
+**Kollisionserkennung**
+
+**Spiel-Logik**
+
+**Sound**
+
+**setup()**
+
+**loop()**
 
 ## Weiterentwicklung
 
