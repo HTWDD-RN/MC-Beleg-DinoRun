@@ -16,8 +16,15 @@ Bei einer Kollision wird das Spiel mit einem Game-Over-Schriftzug angehalten und
 
 <img src="img/documentation/game_over_screen.jpg" alt="Startbildschirm" width="400">
 
-## Setup
+## Inbetriebnahme
 
+- Arudino via USB an PC anschließen
+- Download der optimierten Adafruits GFX-Bibliothek unter: https://github.com/XarkLabs/PDQ_GFX_Libs
+- Entpacken des Ordners und Kopie der Unterordner "PDQ_GFX" und "PDQ_ST7735" in den libraries-Ordner für Arduino
+- BelegFlash.ino in der Arudino IDE öffnen
+- Unter Werkzeuge das jeweilige Board (Arduino Uno) auswählen und unter Werkzeuge den Port des Arduinos auswählen
+- Arudino flashen über das Drücken des Upload-Buttons
+  
 ## Hardware
 
 ## Programmstruktur
