@@ -27,6 +27,16 @@ Bei einer Kollision wird das Spiel mit einem Game-Over-Schriftzug angehalten und
   
 ## Hardware
 
+- Arduino UNO Rev.3
+- 2 Taster -> Spielsteuerung
+- Passive Buzzer -> Ausgabe verschiedener Melodien
+- Potentiometer -> Schaltet den Buzzer bei Bedarf stumm
+- 1,8 Zoll SPI TFT Display ST7735 mit 128 x 160 Pixeln -> Darstellung des Spiels
+
 ## Programmstruktur
 
 ## Weiterentwicklung
+
+- Boden grafisch aufwerten und bspw. Steine einfügen
+- Mehrere Gegner/Hindernisse gleichzeitig
+- Weitere und neue Hindernisse, wie Schluchten oder andere Dinosaurier
