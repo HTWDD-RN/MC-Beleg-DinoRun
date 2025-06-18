@@ -71,13 +71,79 @@ enum SpriteType {
   
 **Kollisionserkennung**
 
+- AABB (Axis-Aligned Bounding Box): https://kishimotostudios.com/articles/aabb_collision/
+    - Funktion checkAABBCollision() prüft, ob sich Rechtecke überlappen
+    - Hitbox-Anpassung möglich durch padding
+    - Separate Logik fürs Ducken
+- Kollisions-Folge:
+    - die globale Variable dead wird auf true gesetzt und das Spiel endet   
+
 **Spiel-Logik**
+
+- Hindernisse:
+  - nutzt bool newObstacle zur Steuerung
+  - zufällige Auswahl über:
+  ```cpp
+   if (newObstacle == true) {  // neues Obstacles setzen
+    randomSeed((int)millis());
+    int randomObs = random(0, validObstaclesLength);
+    obstacle = validObstacles[randomObs];
+
+    switch (obstacle->type) {  // initialiseren des Objekts
+      case SPRITE_CACTUS: initCactus(); break;
+      case SPRITE_CACTUS2: initCactus2(); break;
+      case SPRITE_CACTUS3: initCactus3(); break;
+      case SPRITE_CACTUS4: initCactus4(); break;
+      case SPRITE_BIRD: initBird(); break;
+    }
+    newObstacle = false;
+  }
+   ```
+- Dino-Steuerung
+  - Springen: Parabelberechnung anteilig zur vergangenen Sprungzeit; individuell anpassbar über steepness (Anstieg), JUMP_HEIGHT (Sprunghöhe) und jump_duration (Sprungzeit)
+  - Ducken: Y-Offset-Anpassung; Taster-Interrupt für DUCK_BUTTON_PIN
+ 
+- Spielzustände:
+    - game_start_flag: signalisiert, dass Titelbildschirm mit Startmelodie angezeigt/abgespielt werden soll
+    - dead: signalisiert, dass Game-Over-Bildschirm angezeigt werden soll
 
 **Sound**
 
+- playMelody() steuert den Sound
+- nicht blockierend durch die Verwendung von millis()
+- Sound für: Sprung, Startbildschirm, Game-Over
+
 **setup()**
 
+- Registriert Interrupt für heruntergedrückten Sprung-Taster:
+  ```cpp
+  attachInterrupt(digitalPinToInterrupt(JMP_BUTTON_PIN), jumpButtonFunc, FALLING);
+  ```
+- Konfiguriert die Input-PINs:
+  ```cpp
+  pinMode(DUCK_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(JMP_BUTTON_PIN, INPUT_PULLUP);
+  ```
+  - Öffnen der seriellen Schnittstelle und Festlegen der Datenrate
+   ```cpp
+  Serial.begin(115200);
+  ```
+- Display-Koniguration für PDQ_ST7735
+- Reset aller Sprites mit reset()
+
 **loop()**
+
+- Rendering
+  - drawFrame(): zeichnet die Sprites
+  - updateMelody(): aktualisiert den Sound
+- Game-Over
+    - HighScore-Update
+    - Rückkehr zum Titelbildschirm
+  - Startbildschirm
+    - aufgerufen über draw_start_screen()
+    - zeigt Highscore
+    - wartet auf Tastendruck zum Spielstart
+  - Erhöht die Spielgeschwindigkeit
 
 ## Weiterentwicklung
 
