@@ -27,6 +27,30 @@ Bei einer Kollision wird das Spiel mit einem Game-Over-Schriftzug angehalten und
 - BelegFlash.ino in der Arduino IDE öffnen
 - Unter Werkzeuge das jeweilige Board (Arduino Uno) auswählen und unter Werkzeuge den Port des Arduinos auswählen
 - Arduino flashen über das Drücken des Upload-Buttons
+
+  **Anschlüsse:**
+    
+  - Display
+    
+    | Name       | PIN     | Beschreibung                                                                      |
+    | ---------- | ------- | --------------------------------------------------------------------------------- |
+    | VCC        | 5V      | Stromversorgung                                                                   |
+    | GND        | GND     | Masse                                                                             |
+    | TFT_CS     | 10      | Chip Select                                                                       |
+    | TFT_RST    | 8       | Reset                                                                             |
+    | TFT_DC/A0  | 9       | Data/Command                                                                      |
+    | SDA        | 11      | Serial Data                                                                       |
+    | SCK        | 13      | Serial Clock                                                                      |
+    | LED        | 3,3V    | Hintergrundbeleutung                                                              |
+  
+  
+  - Sonstige Komponenten (Anschluss immer über Masse)
+    
+    | Name            | PIN     | Beschreibung                                                                      |
+    | --------------- | ------- | --------------------------------------------------------------------------------- |
+    | JMP_BUTTON_PIN  | 2       | Startet das Spiel; führt Sprung aus                                               |
+    | DUCK_BUTTON_PIN | 3       | führt Ducken aus                                                                  |
+    | BUZZER_PIN      | 5       | Ton-Ausgabe                                                                       |
   
 ## Hardware
 
