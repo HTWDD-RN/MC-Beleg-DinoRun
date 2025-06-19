@@ -1,5 +1,3 @@
-//#include <Adafruit_GFX.h>
-//#include <Adafruit_ST7735.h>
 // https://github.com/andrey-belokon/PDQ_GFX_Libs
 #include <PDQ_GFX.h>
 #include "PDQ_ST7735_config.h"
@@ -7,21 +5,6 @@
 #include "Graphics.h"
 #include <SPI.h>
 #include <EEPROM.h>
-
-// TODO:
-// - bessere Sprungberechnung mit Parabel (Gravity und Sprungzeit)
-// - Schauen wie lange ein Frame zum Zeichnen braucht und die delay entsprechend anpassen (Delta Time) -> Abziehen der Zeit zum Zeichnen/Logik OK
-// - mehrere verschiedene Kakteen als neue Bilder, vielleicht auch mehrere Kakteen auf einmal / zusätzlich Vogel OK, aber möglicherweise mehrere Obstacles gleichzeitig auf Bildschirm
-// - Geschwindigkeit langsam erhöhen bei Score Meilensteinen (alle 100 oder mehr)
-// - Grafik für Boden -> Pixel als Steine
-// - vielleicht auch noch zweite Taste zum Ducken hinzufügen, wenn Vogel kommt OK
-// - Titelbildschirm
-// - GameOver Bildschirm OK, aber vielleicht erst nach Tastendruck fortsetzen?
-// - Sound über Beeper
-// - Landscape Orientation für das Display? OK
-// - HighScore auf SDCard speichern? OK aber auf EEPROM, vielleicht später mal auf SDCard
-// - wir haben Stand jetzt nur noch ~3.5K Flash Speicher!! -> nutzen jetzt Flash OK
-// - -> Bilder müssen deshalb von SDCard geladen werden -> wie bekommt man das Blinken beim Zugriff auf SDCard weg??
 
 // Pinbelegung für das TFT-Display
 /*
@@ -458,7 +441,7 @@ int drawDino() {
     tft.fillRect(obstacle->x, obstacle->y, obstacle->width, obstacle->height, ST7735_WHITE);  // löschen
     drawGround();
     drawObstacle();
-    drawHitboxes();
+    //drawHitboxes();
 
     if (DarkMode){  // invert colors
       tft.drawBitmap(dino.x, dino.y, epd_bitmap_dead, dino.width, dino.height, 0x07FF);
