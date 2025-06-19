@@ -177,7 +177,7 @@ enum SpriteType {
 **loop()**
 
 - Rendering
-  - ```drawFrame()```**: zeichnet die Sprites
+  - ```drawFrame()```: zeichnet die Sprites
   - ```updateMelody()```: aktualisiert den Sound
 - Game-Over
     - HighScore-Update
