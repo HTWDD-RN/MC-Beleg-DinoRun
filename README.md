@@ -1,10 +1,11 @@
+
 # MC-Beleg DinoRun
 
 ## Ziel und Zweck
 
-Bei diesem Repository handelt es sich um eine Belegarbeit, welche für das Modul "Programmierung von Mikrocontrollern" von Prof. Dr.-Ing. Jörg Vogt entstanden ist. Ziel war die Implementierung des Spiels Dino-Run auf einem Arduino Uno Rev3. Dies geschah unter den Voraussetzung, dass mindestens ein Interrupt verwendet und Sound genutzt werden sollte. Der Beleg wurde Paul Marx und Eric Hübel erstellt.
+Bei diesem Repository handelt es sich um eine Belegarbeit, welche für das Modul "Programmierung von Mikrocontrollern" von Prof. Dr.-Ing. Jörg Vogt entstanden ist. Ziel war die Implementierung des Spiels Dino-Run auf einem Arduino Uno Rev3. Dies geschah unter der Voraussetzung, dass mindestens ein Interrupt verwendet und Sound genutzt werden sollte. Der Beleg wurde Paul Marx und Eric Hübel erstellt.
 
-Das Projekt ist zusätzlich unter https://wokwi.com/projects/432106437369207809 als Online-Version hinterlegt.
+Das Projekt ist zusätzlich unter https://wokwi.com/projects/432106437369207809 als Online-Version hinterlegt. Da es hier keinen ST7735-TFT gab, wird nur ein Teil des ILI9341-TFT verwendet.
 
 ## Spielablauf
 
@@ -12,7 +13,7 @@ Das Spiel wird mit einem Start-Bildschirm initialisiert. Der Startbildschirm gib
 
 <img src="img/documentation/start_screen.jpg" alt="Startbildschirm" width="400">
 
-Der Dino wird über zwei Taster gesteuert, wobei der linke Taster für einen Sprung und der rechte Taster zum Ducken verwendet wird. Dabei gilt es den jeweiligen Hindernissen, zum Beispiel dem Flugdinosaurier oder den Kakteen, auszuweichen. Je länger der Dino nicht mit einem Hindernis kollidiert, desto mehr Punkte können gesammelt werden. Je 100 erreichte Punkte, nimmt die Spielgeschwindkeit und somit die Schwierigkeit zu. 
+Der Dino wird über zwei Taster gesteuert, wobei der linke Taster für einen Sprung und der rechte Taster zum Ducken verwendet wird. Dabei gilt es den jeweiligen Hindernissen, zum Beispiel dem Flugdinosaurier oder den Kakteen, auszuweichen. Je länger der Dino nicht mit einem Hindernis kollidiert, desto mehr Punkte können gesammelt werden. Je 100 erreichte Punkte, nimmt die Spielgeschwindigkeit und somit die Schwierigkeit zu. 
 
 Bei einer Kollision wird das Spiel mit einem Game-Over-Schriftzug angehalten und das Display wechselt wieder zu dem Start-Bildschirm.
 
@@ -20,26 +21,26 @@ Bei einer Kollision wird das Spiel mit einem Game-Over-Schriftzug angehalten und
 
 ## Inbetriebnahme
 
-- Arudino via USB an PC anschließen
+- Arduino via USB an PC anschließen
 - Download der optimierten Adafruits GFX-Bibliothek unter: https://github.com/XarkLabs/PDQ_GFX_Libs
 - Entpacken des Ordners und Kopie der Unterordner "PDQ_GFX" und "PDQ_ST7735" in den libraries-Ordner für Arduino
-- BelegFlash.ino in der Arudino IDE öffnen
+- BelegFlash.ino in der Arduino IDE öffnen
 - Unter Werkzeuge das jeweilige Board (Arduino Uno) auswählen und unter Werkzeuge den Port des Arduinos auswählen
-- Arudino flashen über das Drücken des Upload-Buttons
+- Arduino flashen über das Drücken des Upload-Buttons
   
 ## Hardware
 
 - Arduino UNO Rev.3
-- 2 Taster -> Spielsteuerung
-- Passive Buzzer -> Ausgabe verschiedener Melodien
-- Potentiometer -> Schaltet den Buzzer bei Bedarf stumm
-- 1,8 Zoll SPI TFT Display ST7735 mit 128 x 160 Pixeln -> Darstellung des Spiels
+- 2 Taster → Spielsteuerung
+- Passive Buzzer → Ausgabe verschiedener Melodien
+- Potentiometer → Schaltet den Buzzer bei Bedarf stumm
+- 1,8 Zoll (4,57 cm) SPI TFT Display ST7735 mit 128 x 160 Pixeln → Darstellung des Spiels
 
 <img src="img/documentation/setup.jpg" alt="Aufbau" width="800">
 
 ## Programmstruktur
 
-**Sprite-Definition und Initalisierung**
+**Sprite-Definition und Initialisierung**
 
 *Dino-Sprite:*
 
@@ -55,7 +56,7 @@ Bei einer Kollision wird das Spiel mit einem Game-Over-Schriftzug angehalten und
 | jumping    | bool    | Gibt an, ob der Dino gerade springt                                               |
 | ducking    | bool    | Gibt an, ob der Dino gerade geduckt ist                                           |
 | frame      | int     | Steuert die Animation; wechselt zwischen 0 und 1                                  |
-| padding    | int     | Abstand zur Kollsionsbox                                                          |
+| padding    | int     | Abstand zur Kollisionsbox                                                          |
 
 *Wolken/Vogel/Kakteen:*
 
@@ -69,15 +70,15 @@ enum SpriteType {
   SPRITE_CLOUD
 };
 ```
-- Definition als Enum
-- Initialisierung über initCloud(), initBird(), initCactus(), initCactus2() etc.
-- zufällige Auswahl aus dem Array validObstacles[]
+- Definition als enum
+- Initialisierung über ```initCloud()```, ```initBird()```, ```initCactus()```, ```initCactus2()``` etc.
+- zufällige Auswahl aus dem Array ```validObstacles[]```
   
 **Kollisionserkennung**
 
 - AABB (Axis-Aligned Bounding Box): https://kishimotostudios.com/articles/aabb_collision/
-    - Funktion checkAABBCollision() prüft, ob sich Rechtecke überlappen
-    - Hitbox-Anpassung möglich durch padding
+    - Funktion ```checkAABBCollision()``` prüft, ob sich Rechtecke überlappen
+    - Hitbox-Anpassung möglich durch ```padding```
     - Separate Logik fürs Ducken
 - Kollisions-Folge:
     - die globale Variable dead wird auf true gesetzt und das Spiel endet   
@@ -85,7 +86,7 @@ enum SpriteType {
 **Spiel-Logik**
 
 - Hindernisse:
-  - nutzt bool newObstacle zur Steuerung
+  - nutzt ```bool newObstacle``` zur Steuerung
   - zufällige Auswahl über:
   ```cpp
    if (newObstacle == true) {  // neues Obstacles setzen
@@ -104,17 +105,18 @@ enum SpriteType {
   }
    ```
 - Dino-Steuerung
-  - Springen: Parabelberechnung anteilig zur vergangenen Sprungzeit; individuell anpassbar über steepness (Anstieg), JUMP_HEIGHT (Sprunghöhe) und jump_duration (Sprungzeit)
-  - Ducken: Y-Offset-Anpassung; Taster-Interrupt für DUCK_BUTTON_PIN
+  - Springen: Parabelberechnung anteilig zur vergangenen Sprungzeit; individuell anpassbar über ```steepness``` (Anstieg), ```JUMP_HEIGHT``` (Sprunghöhe) und ```jump_duration``` (Sprungzeit)
+  - Taster-Interrupt für ```JMP_BUTTON_PIN```
+  - Ducken: Y-Offset-Anpassung
  
 - Spielzustände:
-    - game_start_flag: signalisiert, dass Titelbildschirm mit Startmelodie angezeigt/abgespielt werden soll
-    - dead: signalisiert, dass Game-Over-Bildschirm angezeigt werden soll
+    - ```game_start_flag```: signalisiert, dass Titelbildschirm mit Startmelodie angezeigt/abgespielt werden soll
+    - ```dead```: signalisiert, dass Game-Over-Bildschirm angezeigt werden soll
 
 **Sound**
 
-- playMelody() steuert den Sound
-- nicht blockierend durch die Verwendung von millis()
+- ```playMelody()``` steuert den Sound
+- nicht blockierend durch die Verwendung von ```millis()```
 - Sound für: Sprung, Startbildschirm, Game-Over
 
 **setup()**
@@ -132,8 +134,8 @@ enum SpriteType {
    ```cpp
   Serial.begin(115200);
   ```
-- Display-Koniguration für PDQ_ST7735
-- Reset aller Sprites mit reset()
+- Display-Konfiguration für PDQ_ST7735
+- Initialisierung des Spiels mit ```reset()```
 
 **loop()**
 
@@ -147,7 +149,8 @@ enum SpriteType {
     - aufgerufen über draw_start_screen()
     - zeigt Highscore
     - wartet auf Tastendruck zum Spielstart
-  - Erhöht die Spielgeschwindigkeit
+  - Erhöht die Spielgeschwindigkeit bis 800 Punkte
+  - animiert jeden 4. Frame und erhöhen des Scores
 
 ## Weiterentwicklung
 
