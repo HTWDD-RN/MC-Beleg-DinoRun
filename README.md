@@ -177,13 +177,13 @@ enum SpriteType {
 **loop()**
 
 - Rendering
-  - drawFrame(): zeichnet die Sprites
-  - updateMelody(): aktualisiert den Sound
+  - ```drawFrame()```**: zeichnet die Sprites
+  - ```updateMelody()```: aktualisiert den Sound
 - Game-Over
     - HighScore-Update
     - Rückkehr zum Titelbildschirm
   - Startbildschirm
-    - aufgerufen über draw_start_screen()
+    - aufgerufen über ```draw_start_screen()```
     - zeigt Highscore
     - wartet auf Tastendruck zum Spielstart
   - Erhöht die Spielgeschwindigkeit bis 800 Punkte
