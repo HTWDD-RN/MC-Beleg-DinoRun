@@ -3,7 +3,7 @@
 
 ## Ziel und Zweck
 
-Bei diesem Repository handelt es sich um eine Belegarbeit, welche für das Modul "Programmierung von Mikrocontrollern" von Prof. Dr.-Ing. Jörg Vogt entstanden ist. Ziel war die Implementierung des Spiels Dino-Run auf einem Arduino Uno Rev3. Dies geschah unter der Voraussetzung, dass mindestens ein Interrupt verwendet und Sound genutzt werden sollte. Der Beleg wurde Paul Marx und Eric Hübel erstellt.
+Bei diesem Repository handelt es sich um eine Belegarbeit, welche für das Modul "Programmierung von Mikrocontrollern" von Prof. Dr.-Ing. Jörg Vogt entstanden ist. Ziel war die Implementierung des Spiels Dino-Run auf einem Arduino Uno Rev3. Dies geschah unter der Voraussetzung, dass mindestens ein Interrupt verwendet und Sound genutzt werden sollte. Der Beleg wurde von Paul Marx und Eric Hübel erstellt.
 
 Das Projekt ist zusätzlich unter https://wokwi.com/projects/432106437369207809 als Online-Version hinterlegt. Da es hier keinen ST7735-TFT gab, wird nur ein Teil des ILI9341-TFT verwendet.
 
