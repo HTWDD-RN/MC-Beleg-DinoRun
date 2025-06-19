@@ -16,7 +16,7 @@ Der Dino wird über zwei Taster gesteuert, wobei der linke Taster für einen Spr
 
 Bei einer Kollision wird das Spiel mit einem Game-Over-Schriftzug angehalten und das Display wechselt wieder zu dem Start-Bildschirm.
 
-<img src="img/documentation/game_over_screen.jpg" alt="Startbildschirm" width="400">
+<img src="img/documentation/game_over_screen.jpg" alt="Game-Over-Bildschirm" width="400">
 
 ## Inbetriebnahme
 
@@ -34,6 +34,8 @@ Bei einer Kollision wird das Spiel mit einem Game-Over-Schriftzug angehalten und
 - Passive Buzzer -> Ausgabe verschiedener Melodien
 - Potentiometer -> Schaltet den Buzzer bei Bedarf stumm
 - 1,8 Zoll SPI TFT Display ST7735 mit 128 x 160 Pixeln -> Darstellung des Spiels
+
+<img src="img/documentation/setup.jpg" alt="Aufbau" width="800">
 
 ## Programmstruktur
 
