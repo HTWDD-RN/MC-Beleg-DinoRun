@@ -60,6 +60,8 @@ Bei einer Kollision wird das Spiel mit einem Game-Over-Schriftzug angehalten und
 
 *Wolken/Vogel/Kakteen:*
 
+- Auswahl erfolgt über enum:
+
 ```cpp
 enum SpriteType {
   SPRITE_CACTUS,
@@ -70,7 +72,18 @@ enum SpriteType {
   SPRITE_CLOUD
 };
 ```
-- Definition als enum
+- Definition der Sprites:
+
+| Variable   | Typ        | Beschreibung                                                                      |
+| ---------- | ---------- | --------------------------------------------------------------------------------- |
+| type       | SpriteType | Typ: Cactus 1-4, Bird, Cloud                                                   |
+| x          | int        | x-Koordinate                                                                   |
+| y          | int        | y-Koordinate                                                                   |
+| width      | int        | Breite                                                                         |
+| height     | int        | Höhe                                                                           |
+| dx         | int        | Verschiebung des Sprites auf der x-Achse                                       |
+| frame      | int        | Steuert die Animation; wechselt zwischen 0 und 1                               |
+
 - Initialisierung über ```initCloud()```, ```initBird()```, ```initCactus()```, ```initCactus2()``` etc.
 - zufällige Auswahl aus dem Array ```validObstacles[]```
   
