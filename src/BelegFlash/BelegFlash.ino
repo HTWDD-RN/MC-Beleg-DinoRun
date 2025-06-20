@@ -688,7 +688,7 @@ void loop() {
     tft.print(String("FPS:") + fps);
     Serial.println(String("FPS: ") + fps);
   }
-  if (gameSpeed <= 4 && score % MILESTONE == 0 && score != 0 && score != lastScore) {
+  if (gameSpeed < 4 && score % MILESTONE == 0 && score != 0 && score != lastScore) {
     gameSpeed += 0.5;
     lastScore = score; // only trigger once per score
     Serial.println(String("Speed: ") + gameSpeed);
