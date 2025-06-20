@@ -93,7 +93,7 @@ bool animate = false;             // Flag ob animiert und score aktualisiert wir
 
 bool game_start_flag = true;
 
-#define EEPROMHighscore 0  // Highscore permant in EEPROM speichern
+#define EEPROMHighscore 1  // Highscore permant in EEPROM speichern
 int highscore = 0;
 int score = 0;
 const int MILESTONE = 100;
