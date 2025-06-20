@@ -282,8 +282,10 @@ void reset() {
   tft.fillScreen(ST7735_WHITE);
 
 #if EEPROMHighscore == 1
-  EEPROM.get(0, highscore);
+  initEEPROMHighscore();
+  EEPROM.get(1, highscore);
 #endif
+
   int highscore_length = (String(highscore).length() + String("HI:").length())*6;
   int start_drawing = (tft.width() - highscore_length)/2;
   tft.setCursor(start_drawing, 5);
@@ -638,6 +640,19 @@ bool handle_pressed_buttons(){
   return false;
 }
 
+void initEEPROMHighscore() {
+  #if EEPROMHighscore == 1
+    byte marker;
+    EEPROM.get(0, marker);
+    
+    if (marker != 0xAB) { // noch nicht initialisiert
+        highscore = 0;
+        EEPROM.put(0, 0xAB);  // Marker, adr 0
+        EEPROM.put(1, highscore); // Highscore, adr 1
+    }
+  #endif
+}
+
 void blinkingHighScore() {
   if (!is_blinking) {
     is_blinking = !is_blinking;
@@ -651,9 +666,7 @@ void blinkingHighScore() {
     int start_drawing = (tft.width() - highscore_length)/2;
     tft.setCursor(start_drawing, 35);
     //Serial.print(String("Highscore") + highscore_length);
-#if EEPROMHighscore == 1
-    EEPROM.get(0, highscore);
-#endif
+
     tft.print("Highscore:" + String(highscore));
     is_blinking = false;
   }
@@ -751,10 +764,10 @@ void loop() {
 
 #if EEPROMHighscore == 1
     // neuer Highscore?
-    Serial.println(String("EEPROM val: ") + EEPROM.get(0, highscore));
-    EEPROM.get(0, highscore);
+    Serial.println(String("EEPROM val: ") + EEPROM.get(1, highscore));
+    EEPROM.get(1, highscore);
     if (score > highscore) {
-      EEPROM.put(0, score);
+      EEPROM.put(1, score);
     }
 #else
     if (score > highscore) {
