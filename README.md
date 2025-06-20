@@ -5,15 +5,15 @@
 
 Bei diesem Repository handelt es sich um eine Belegarbeit, welche für das Modul "Programmierung von Mikrocontrollern" von Prof. Dr.-Ing. Jörg Vogt entstanden ist. Ziel war die Implementierung des Spiels Dino-Run auf einem Arduino Uno Rev3. Dies geschah unter der Voraussetzung, dass mindestens ein Interrupt verwendet und Sound genutzt werden sollte. Der Beleg wurde von Paul Marx und Eric Hübel erstellt.
 
-Das Projekt ist zusätzlich unter https://wokwi.com/projects/432106437369207809 als Online-Version hinterlegt. Da es hier keinen ST7735-TFT gab, wird nur ein Teil des ILI9341-TFT verwendet.
+Das Projekt ist zusätzlich unter https://wokwi.com/projects/432106437369207809 als Online-Version hinterlegt. Da es hier keinen ST7735-TFT gab, wird nur ein Teil der Bildfläche vom ILI9341-TFT verwendet. Außerdem gibt es kein Potentiometer zur Lautstärkeregelung, da der Buzzer bei Wokwi digital arbeitet und deshalb nur an oder aus sein kann.
 
 ## Spielablauf
 
-Das Spiel wird mit einem Start-Bildschirm initialisiert. Der Startbildschirm gibt Auskunft über die Bedienung und zeigt den aktuellen Highscore an. Der Spielstart erfolgt durch das Drücken des linken Tasters. 
+Das Spiel wird mit einem Start-Bildschirm initialisiert. Der Start-Bildschirm gibt Auskunft über die Bedienung und zeigt den aktuellen Highscore an, welcher aus dem EEPROM geladen wird. Der Spielstart erfolgt durch das Drücken des linken Tasters. 
 
 <img src="img/documentation/start_screen.jpg" alt="Startbildschirm" width="400">
 
-Der Dino wird über zwei Taster gesteuert, wobei der linke Taster für einen Sprung und der rechte Taster zum Ducken verwendet wird. Dabei gilt es den jeweiligen Hindernissen, zum Beispiel dem Flugdinosaurier oder den Kakteen, auszuweichen. Je länger der Dino nicht mit einem Hindernis kollidiert, desto mehr Punkte können gesammelt werden. Je 100 erreichte Punkte, nimmt die Spielgeschwindigkeit und somit die Schwierigkeit zu. 
+Der Dino wird über zwei Taster gesteuert, wobei der linke Taster für einen Sprung und der rechte Taster zum Ducken verwendet wird. Dabei gilt es den jeweiligen Hindernissen, zum Beispiel dem Flugdinosaurier oder den Kakteen, auszuweichen. Je länger der Dino nicht mit einem Hindernis kollidiert, desto mehr Punkte können gesammelt werden. Je 100 erreichte Punkte, nimmt die Spielgeschwindigkeit und somit die Schwierigkeit zu. Dies geht bis 800 Punkte, wo das Spiel nicht mehr schneller wird. 
 
 Bei einer Kollision wird das Spiel mit einem Game-Over-Schriftzug angehalten und das Display wechselt wieder zu dem Start-Bildschirm.
 
@@ -46,11 +46,11 @@ Bei einer Kollision wird das Spiel mit einem Game-Over-Schriftzug angehalten und
   
   - Sonstige Komponenten (Anschluss immer über Masse)
     
-    | Name            | PIN     | Beschreibung                                                                      |
-    | --------------- | ------- | --------------------------------------------------------------------------------- |
-    | JMP_BUTTON_PIN  | 2       | Startet das Spiel; führt Sprung aus                                               |
-    | DUCK_BUTTON_PIN | 3       | führt Ducken aus                                                                  |
-    | BUZZER_PIN      | 5       | Ton-Ausgabe                                                                       |
+    | Name            | PIN     | Beschreibung                                                                 |
+    | --------------- | ------- | ---------------------------------------------------------------------------- |
+    | JMP_BUTTON_PIN  | 2       | Startet das Spiel; führt Sprung aus                                          |
+    | DUCK_BUTTON_PIN | 3       | führt Ducken aus                                                             |
+    | BUZZER_PIN      | 5       | Ton-Ausgabe                                                                  |
   
 ## Hardware
 
@@ -80,7 +80,7 @@ Bei einer Kollision wird das Spiel mit einem Game-Over-Schriftzug angehalten und
 | jumping    | bool    | Gibt an, ob der Dino gerade springt                                               |
 | ducking    | bool    | Gibt an, ob der Dino gerade geduckt ist                                           |
 | frame      | int     | Steuert die Animation; wechselt zwischen 0 und 1                                  |
-| padding    | int     | Abstand zur Kollisionsbox                                                          |
+| padding    | int     | Abstand zur Kollisionsbox                                                         |
 
 *Wolken/Vogel/Kakteen:*
 
@@ -98,8 +98,8 @@ enum SpriteType {
 ```
 - Definition der Sprites:
 
-| Variable   | Typ        | Beschreibung                                                                      |
-| ---------- | ---------- | --------------------------------------------------------------------------------- |
+| Variable   | Typ        | Beschreibung                                                                   |
+| ---------- | ---------- | ------------------------------------------------------------------------------ |
 | type       | SpriteType | Typ: Cactus 1-4, Bird, Cloud                                                   |
 | x          | int        | x-Koordinate                                                                   |
 | y          | int        | y-Koordinate                                                                   |
